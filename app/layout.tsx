@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 const dmSans = DM_Sans({ 
@@ -34,6 +35,16 @@ export default function RootLayout({
     <html lang="es" className={`${dmSans.variable} ${cormorantGaramond.variable} bg-[#0A0A0A]`}>
       <body className="font-sans antialiased">
         {children}
+        <Toaster 
+          position="top-right" 
+          toastOptions={{
+            style: {
+              background: '#1A1A1A',
+              border: '1px solid #2A2A2A',
+              color: '#E5E5E5',
+            },
+          }}
+        />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

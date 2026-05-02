@@ -15,12 +15,18 @@ export default async function DashboardLayout({
     redirect('/login')
   }
   
-  // Get user profile from usuarios table
-  const { data: usuario } = await supabase
-    .from('usuarios')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  // Get user profile and atrasados count in parallel
+  const [{ data: usuario }, { count: atrasadosCount }] = await Promise.all([
+    supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('alumnos')
+      .select('*', { count: 'exact', head: true })
+      .eq('estado', 'atrasado')
+  ])
   
   if (!usuario) {
     // If no profile exists, create a default one
@@ -32,8 +38,8 @@ export default async function DashboardLayout({
       created_at: new Date().toISOString(),
     }
     
-    return <DashboardShell user={defaultUsuario}>{children}</DashboardShell>
+    return <DashboardShell user={defaultUsuario} atrasadosCount={atrasadosCount || 0}>{children}</DashboardShell>
   }
   
-  return <DashboardShell user={usuario}>{children}</DashboardShell>
+  return <DashboardShell user={usuario} atrasadosCount={atrasadosCount || 0}>{children}</DashboardShell>
 }

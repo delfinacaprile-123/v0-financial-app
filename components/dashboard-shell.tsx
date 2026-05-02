@@ -8,9 +8,10 @@ import type { Usuario } from '@/types/user'
 interface DashboardShellProps {
   children: React.ReactNode
   user: Usuario
+  atrasadosCount?: number
 }
 
-export function DashboardShell({ children, user }: DashboardShellProps) {
+export function DashboardShell({ children, user, atrasadosCount = 0 }: DashboardShellProps) {
   const router = useRouter()
   const supabase = createClient()
   
@@ -22,7 +23,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
   
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
-      <Sidebar user={user} onLogout={handleLogout} />
+      <Sidebar user={user} onLogout={handleLogout} atrasadosCount={atrasadosCount} />
       <main className="ml-60 p-10 min-h-screen">
         {children}
       </main>

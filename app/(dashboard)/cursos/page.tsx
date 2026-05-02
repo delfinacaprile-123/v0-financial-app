@@ -1,17 +1,20 @@
 import { PageHeader } from '@/components/page-header'
+import { CursosClient } from '@/components/cursos/cursos-client'
+import { getCursos, getAlumnos } from './actions'
 
-export default function CursosPage() {
+export default async function CursosPage() {
+  const [cursos, alumnos] = await Promise.all([
+    getCursos(),
+    getAlumnos(),
+  ])
+
   return (
-    <div>
-      <PageHeader 
-        title="Cursos" 
-        description="Gestion de cursos y capacitaciones"
-        color="#C9A96E"
+    <div className="space-y-6">
+      <PageHeader
+        title="Cursos"
+        description="Gestion de alumnos y pagos de cursos"
       />
-      
-      <div className="bg-[#111111] border border-[rgba(201,169,110,0.15)] rounded-xl p-8 text-center">
-        <p className="text-[#888888]">No hay cursos registrados</p>
-      </div>
+      <CursosClient cursos={cursos} alumnos={alumnos} />
     </div>
   )
 }

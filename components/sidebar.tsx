@@ -17,6 +17,7 @@ import type { Usuario } from '@/types/user'
 interface SidebarProps {
   user: Usuario
   onLogout: () => void
+  atrasadosCount?: number
 }
 
 const navItems = [
@@ -29,7 +30,7 @@ const navItems = [
   {
     section: 'Unidades',
     items: [
-      { name: 'Cursos', href: '/cursos', icon: BookOpen, color: '#C9A96E', hasBadge: true },
+      { name: 'Cursos', href: '/cursos', icon: BookOpen, color: '#C9A96E', badgeKey: 'cursos' },
       { name: 'Agencia', href: '/agencia', icon: Briefcase, color: '#8FB3C9' },
       { name: 'Social TV', href: '/social-tv', icon: Tv, color: '#B09EC9' },
     ]
@@ -48,12 +49,17 @@ const navItems = [
   },
 ]
 
-export function Sidebar({ user, onLogout }: SidebarProps) {
+export function Sidebar({ user, onLogout, atrasadosCount = 0 }: SidebarProps) {
   const pathname = usePathname()
   
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard' || pathname === '/'
     return pathname.startsWith(href)
+  }
+
+  const getBadgeCount = (badgeKey?: string) => {
+    if (badgeKey === 'cursos') return atrasadosCount
+    return 0
   }
 
   return (
@@ -82,6 +88,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
                 
                 const active = isActive(item.href)
                 const Icon = item.icon
+                const badgeCount = getBadgeCount(item.badgeKey)
                 
                 return (
                   <li key={item.name}>
@@ -100,9 +107,9 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
                       />
                       <Icon className="w-4 h-4" />
                       <span className="text-sm">{item.name}</span>
-                      {item.hasBadge && (
-                        <span className="ml-auto bg-[#EF4444] text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                          3
+                      {badgeCount > 0 && (
+                        <span className="ml-auto bg-amber-500 text-black text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                          {badgeCount}
                         </span>
                       )}
                     </Link>
