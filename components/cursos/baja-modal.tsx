@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alumno } from '@/types/cursos'
-import { darBajaAlumno } from '@/app/(dashboard)/cursos/actions'
 import { toast } from 'sonner'
 
 interface BajaModalProps {
@@ -32,16 +31,13 @@ export function BajaModal({ isOpen, onClose, alumno, onSuccess }: BajaModalProps
     e.preventDefault()
     setLoading(true)
 
-    try {
-      await darBajaAlumno(alumno.id, tipoBaja)
-      toast.success(`Alumno dado de baja ${tipoBaja}`)
-      onSuccess?.()
-      onClose()
-    } catch {
-      toast.error('Error al dar de baja al alumno')
-    } finally {
-      setLoading(false)
-    }
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    toast.success(`Alumno dado de baja ${tipoBaja}`)
+    onSuccess?.()
+    setLoading(false)
+    onClose()
   }
 
   return (
@@ -88,7 +84,7 @@ export function BajaModal({ isOpen, onClose, alumno, onSuccess }: BajaModalProps
           <div className="rounded-lg bg-muted/50 p-3">
             <p className="text-sm text-muted-foreground">
               {tipoBaja === 'temporal' 
-                ? 'El alumno podra ser reincorporado mas adelante desde la pestaña de bajas.'
+                ? 'El alumno podra ser reincorporado mas adelante desde la pestana de bajas.'
                 : 'El alumno quedara registrado como baja definitiva.'}
             </p>
           </div>

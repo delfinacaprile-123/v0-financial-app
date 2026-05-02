@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Curso, Alumno } from '@/types/cursos'
-import { createAlumno, updateAlumno } from '@/app/(dashboard)/cursos/actions'
 import { toast } from 'sonner'
 
 interface AlumnoModalProps {
@@ -59,29 +58,17 @@ export function AlumnoModal({ isOpen, onClose, cursos, alumno }: AlumnoModalProp
     e.preventDefault()
     setLoading(true)
 
-    try {
-      const formData = {
-        nombre,
-        tipo,
-        descuento_pct: tipo === 'descuento' ? descuentoPct : 0,
-        monto_personalizado: montoPersonalizado ? parseFloat(montoPersonalizado) : null,
-        curso_id: cursoId,
-        notas: notas || null,
-      }
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
 
-      if (isEditing && alumno) {
-        await updateAlumno(alumno.id, formData)
-        toast.success('Alumno actualizado correctamente')
-      } else {
-        await createAlumno(formData)
-        toast.success('Alumno creado correctamente')
-      }
-      onClose()
-    } catch {
-      toast.error('Error al guardar el alumno')
-    } finally {
-      setLoading(false)
+    if (isEditing) {
+      toast.success('Alumno actualizado correctamente')
+    } else {
+      toast.success('Alumno creado correctamente')
     }
+    
+    setLoading(false)
+    onClose()
   }
 
   const selectedCurso = cursos.find(c => c.id === cursoId)

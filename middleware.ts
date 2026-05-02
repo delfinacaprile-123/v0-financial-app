@@ -1,8 +1,9 @@
-import { updateSession } from '@/lib/supabase/proxy'
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 
+// Temporarily disabled Supabase auth - using mock data
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  // Just pass through for now - mock data mode
+  return NextResponse.next()
 }
 
 export const config = {
