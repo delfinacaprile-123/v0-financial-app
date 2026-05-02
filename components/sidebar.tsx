@@ -23,7 +23,7 @@ const navItems = [
   {
     section: 'General',
     items: [
-      { name: 'Dashboard', href: '/', icon: LayoutDashboard, color: '#C9A96E' },
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: '#C9A96E' },
     ]
   },
   {
@@ -52,7 +52,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const pathname = usePathname()
   
   const isActive = (href: string) => {
-    if (href === '/') return pathname === '/'
+    if (href === '/dashboard') return pathname === '/dashboard' || pathname === '/'
     return pathname.startsWith(href)
   }
 
