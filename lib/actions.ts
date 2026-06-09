@@ -581,3 +581,89 @@ export async function getDashboardStats() {
     caja: { secretaria: saldos.secretaria, mama: saldos.mama, total: saldos.secretaria + saldos.mama }
   }
 }
+
+// ============ GASTOS ============
+
+export interface GastoInput {
+  nombre: string
+  categoria: 'sueldo' | 'impuesto' | 'gasto_fijo' | 'otro'
+  monto: number
+  frecuencia: 'mensual' | 'trimestral' | 'anual' | 'unico'
+  metodo: 'debito_automatico' | 'transferencia' | 'efectivo' | 'tarjeta'
+  fecha_pago: string
+  mes_correspondiente?: string | null
+  pagado?: boolean
+  notas?: string | null
+}
+
+export async function getGastos() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('gastos')
+    .select('*, usuarios(nombre)')
+    .order('fecha_pago', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function createGasto(input: GastoInput) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await supabase.from('gastos').insert({
+    nombre: input.nombre,
+    categoria: input.categoria,
+    monto: input.monto,
+    frecuencia: input.frecuencia,
+    metodo: input.metodo,
+    fecha_pago: input.fecha_pago,
+    mes_correspondiente: input.mes_correspondiente ?? null,
+    pagado: input.pagado ?? false,
+    notas: input.notas ?? null,
+    registrado_por: user?.id ?? null,
+  })
+
+  if (error) throw error
+  revalidatePath('/gastos')
+}
+
+export async function updateGasto(id: string, input: GastoInput) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('gastos')
+    .update({
+      nombre: input.nombre,
+      categoria: input.categoria,
+      monto: input.monto,
+      frecuencia: input.frecuencia,
+      metodo: input.metodo,
+      fecha_pago: input.fecha_pago,
+      mes_correspondiente: input.mes_correspondiente ?? null,
+      pagado: input.pagado ?? false,
+      notas: input.notas ?? null,
+    })
+    .eq('id', id)
+
+  if (error) throw error
+  revalidatePath('/gastos')
+}
+
+export async function toggleGastoPagado(id: string, pagado: boolean) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('gastos')
+    .update({ pagado })
+    .eq('id', id)
+
+  if (error) throw error
+  revalidatePath('/gastos')
+}
+
+export async function deleteGasto(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('gastos').delete().eq('id', id)
+
+  if (error) throw error
+  revalidatePath('/gastos')
+}

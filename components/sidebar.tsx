@@ -8,6 +8,7 @@ import {
   Briefcase, 
   Tv, 
   Wallet, 
+  Receipt,
   Settings,
   LogOut
 } from 'lucide-react'
@@ -39,6 +40,7 @@ const navItems = [
     section: 'Finanzas',
     items: [
       { name: 'Caja Nativa', href: '/caja', icon: Wallet, color: '#C9A96E' },
+      { name: 'Gastos', href: '/gastos', icon: Receipt, color: '#C9A96E' },
     ]
   },
   {
