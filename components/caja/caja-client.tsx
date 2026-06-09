@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useTransition, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createMovimientoCaja, updateMovimientoCaja, deleteMovimientoCaja } from '@/lib/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -33,6 +35,12 @@ const MESES = [
 
 export function CajaClient({ initialMovimientos }: CajaClientProps) {
   const [movimientos, setMovimientos] = useState<Movimiento[]>(initialMovimientos)
+
+  // Sincroniza con los datos del servidor tras router.refresh()
+  useEffect(() => {
+    setMovimientos(initialMovimientos)
+  }, [initialMovimientos])
+
   const [activeTab, setActiveTab] = useState('movimientos')
   const [filtroTipo, setFiltroTipo] = useState<string>('todos')
   const [filtroPersona, setFiltroPersona] = useState<string>('todos')
@@ -41,6 +49,8 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [movimientoEditar, setMovimientoEditar] = useState<Movimiento | null>(null)
   const [personaDetalle, setPersonaDetalle] = useState<PersonaCaja>('secretaria')
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   // Calcular saldos
   const calcularSaldos = useMemo(() => {
@@ -187,27 +197,66 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
   }, [movimientos])
 
   const handleSaveMovimiento = (data: Omit<Movimiento, 'id' | 'created_at'>) => {
+    const input = {
+      tipo: data.tipo,
+      monto: data.monto,
+      enPoderDe: data.enPoderDe,
+      de: data.de,
+      para: data.para,
+      descripcion: data.descripcion,
+      fecha: data.fecha,
+    }
+
     if (movimientoEditar) {
-      setMovimientos(prev => prev.map(m => 
-        m.id === movimientoEditar.id 
-          ? { ...m, ...data }
-          : m
-      ))
+      const id = movimientoEditar.id
+      // Optimista
+      setMovimientos(prev => prev.map(m => (m.id === id ? { ...m, ...data } : m)))
+      startTransition(async () => {
+        try {
+          await updateMovimientoCaja(id, input)
+          router.refresh()
+        } catch {
+          toast.error('Error al actualizar el movimiento')
+          router.refresh()
+        }
+      })
     } else {
+      const tempId = crypto.randomUUID()
       const nuevo: Movimiento = {
         ...data,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString()
+        id: tempId,
+        created_at: new Date().toISOString(),
       }
+      // Optimista
       setMovimientos(prev => [...prev, nuevo])
+      startTransition(async () => {
+        try {
+          await createMovimientoCaja(input)
+          router.refresh()
+        } catch {
+          toast.error('Error al guardar el movimiento')
+          // Revertir
+          setMovimientos(prev => prev.filter(m => m.id !== tempId))
+        }
+      })
     }
     setMovimientoEditar(null)
   }
 
   const handleEliminar = (id: string) => {
     if (confirm('¿Eliminar este movimiento?')) {
+      const previo = movimientos
       setMovimientos(prev => prev.filter(m => m.id !== id))
-      toast.success('Movimiento eliminado')
+      startTransition(async () => {
+        try {
+          await deleteMovimientoCaja(id)
+          toast.success('Movimiento eliminado')
+          router.refresh()
+        } catch {
+          toast.error('Error al eliminar el movimiento')
+          setMovimientos(previo)
+        }
+      })
     }
   }
 

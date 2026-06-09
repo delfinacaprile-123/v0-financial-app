@@ -342,35 +342,50 @@ export async function getMovimientosCaja(mes?: string, anio?: number) {
   return data
 }
 
-export async function createMovimientoCaja(formData: {
-  tipo: string
+// Forma que envía el cliente (componente Caja)
+export interface MovimientoInput {
+  tipo: 'ingreso' | 'egreso' | 'transferencia'
   monto: number
-  en_poder_de: string
+  enPoderDe: 'secretaria' | 'mama'
+  de?: 'secretaria' | 'mama'
+  para?: 'secretaria' | 'mama'
   descripcion?: string
   fecha: string
-}) {
+}
+
+// Mapea la forma del cliente al esquema de la tabla `caja`
+function mapMovimientoToRow(input: MovimientoInput) {
+  const isTransfer = input.tipo === 'transferencia'
+  return {
+    tipo: isTransfer ? 'transferencia_interna' : input.tipo,
+    monto: input.monto,
+    // Para transferencias guardamos el ORIGEN en `en_poder_de`
+    en_poder_de: isTransfer ? (input.de ?? input.enPoderDe) : input.enPoderDe,
+    descripcion: input.descripcion ?? null,
+    fecha: input.fecha,
+  }
+}
+
+export async function createMovimientoCaja(input: MovimientoInput) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   const { error } = await supabase.from('caja').insert({
-    ...formData,
-    registrado_por: user?.id
+    ...mapMovimientoToRow(input),
+    registrado_por: user?.id ?? null,
   })
-  
+
   if (error) throw error
   revalidatePath('/caja')
 }
 
-export async function updateMovimientoCaja(id: string, formData: {
-  tipo?: string
-  monto?: number
-  en_poder_de?: string
-  descripcion?: string
-  fecha?: string
-}) {
+export async function updateMovimientoCaja(id: string, input: MovimientoInput) {
   const supabase = await createClient()
-  const { error } = await supabase.from('caja').update(formData).eq('id', id)
-  
+  const { error } = await supabase
+    .from('caja')
+    .update(mapMovimientoToRow(input))
+    .eq('id', id)
+
   if (error) throw error
   revalidatePath('/caja')
 }
