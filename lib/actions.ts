@@ -353,14 +353,30 @@ export interface MovimientoInput {
   fecha: string
 }
 
+// Normaliza cualquier valor de persona a los valores canónicos que acepta
+// el CHECK de la columna `en_poder_de` ('secretaria' | 'mama').
+// Tolera acentos, mayúsculas y etiquetas visibles (ej: 'María', 'Mamá', 'Secretaría').
+function normalizePersona(value?: string | null): 'secretaria' | 'mama' {
+  const normalized = (value ?? '')
+    .normalize('NFD')              // separa los acentos de las letras
+    .replace(/[\u0300-\u036f]/g, '') // elimina los diacríticos (tildes)
+    .trim()
+    .toLowerCase()
+
+  if (normalized.startsWith('mam')) return 'mama'      // mama, mamá, maria/maría (mamá)
+  if (normalized.startsWith('mar')) return 'mama'      // 'María' es la etiqueta de 'mama'
+  return 'secretaria'
+}
+
 // Mapea la forma del cliente al esquema de la tabla `caja`
 function mapMovimientoToRow(input: MovimientoInput) {
   const isTransfer = input.tipo === 'transferencia'
+  // Para transferencias guardamos el ORIGEN en `en_poder_de`
+  const personaCruda = isTransfer ? (input.de ?? input.enPoderDe) : input.enPoderDe
   return {
     tipo: isTransfer ? 'transferencia_interna' : input.tipo,
     monto: input.monto,
-    // Para transferencias guardamos el ORIGEN en `en_poder_de`
-    en_poder_de: isTransfer ? (input.de ?? input.enPoderDe) : input.enPoderDe,
+    en_poder_de: normalizePersona(personaCruda),
     descripcion: input.descripcion ?? null,
     fecha: input.fecha,
   }
