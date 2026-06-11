@@ -60,7 +60,7 @@ export function MovimientoModal({
     if (tipo === 'egreso') {
       const saldoActual = enPoderDe === 'secretaria' ? saldoSecretaria : saldoMama
       if (montoNum > saldoActual) {
-        toast.error(`Saldo insuficiente. ${enPoderDe === 'secretaria' ? 'Secretaria' : 'Mama'} solo tiene $${saldoActual.toLocaleString('es-AR')}`)
+        toast.error(`Saldo insuficiente. ${enPoderDe === 'secretaria' ? 'Eugenia' : 'Mama'} solo tiene $${saldoActual.toLocaleString('es-AR')}`)
         return false
       }
     }
@@ -68,7 +68,7 @@ export function MovimientoModal({
     if (tipo === 'transferencia') {
       const saldoOrigen = de === 'secretaria' ? saldoSecretaria : saldoMama
       if (montoNum > saldoOrigen) {
-        toast.error(`Saldo insuficiente. ${de === 'secretaria' ? 'Secretaria' : 'Mama'} solo tiene $${saldoOrigen.toLocaleString('es-AR')}`)
+        toast.error(`Saldo insuficiente. ${de === 'secretaria' ? 'Eugenia' : 'Mama'} solo tiene $${saldoOrigen.toLocaleString('es-AR')}`)
         return false
       }
     }
@@ -102,7 +102,7 @@ export function MovimientoModal({
         fecha,
         tipo,
         descripcion: tipo === 'transferencia' && !descripcion.trim() 
-          ? `${de === 'secretaria' ? 'Secretaria' : 'Mama'} → ${para === 'secretaria' ? 'Secretaria' : 'Mama'}`
+                      ? `${de === 'secretaria' ? 'Eugenia' : 'Mama'} → ${para === 'secretaria' ? 'Eugenia' : 'Mama'}`
           : descripcion,
         monto: parseFloat(monto),
         enPoderDe: tipo === 'transferencia' ? para : enPoderDe,
@@ -171,7 +171,7 @@ export function MovimientoModal({
                   </SelectTrigger>
                   <SelectContent className="bg-[#1A1A1A] border-[#2A2A2A]">
                     <SelectItem value="secretaria" className="text-[#E5E5E5]">
-                      Secretaria (${saldoSecretaria.toLocaleString('es-AR')})
+                      Eugenia (${saldoSecretaria.toLocaleString('es-AR')})
                     </SelectItem>
                     <SelectItem value="mama" className="text-[#E5E5E5]">
                       Mama (${saldoMama.toLocaleString('es-AR')})
@@ -183,7 +183,7 @@ export function MovimientoModal({
               <div className="space-y-2">
                 <Label className="text-[#888888]">Para</Label>
                 <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-md px-3 py-2 text-[#888888]">
-                  {de === 'secretaria' ? 'Mama' : 'Secretaria'}
+                  {de === 'secretaria' ? 'Mama' : 'Eugenia'}
                 </div>
               </div>
             </>
@@ -198,7 +198,7 @@ export function MovimientoModal({
                 </SelectTrigger>
                 <SelectContent className="bg-[#1A1A1A] border-[#2A2A2A]">
                   <SelectItem value="secretaria" className="text-[#E5E5E5]">
-                    Secretaria {tipo === 'egreso' && `(${saldoSecretaria.toLocaleString('es-AR')})`}
+                    Eugenia {tipo === 'egreso' && `(${saldoSecretaria.toLocaleString('es-AR')})`}
                   </SelectItem>
                   <SelectItem value="mama" className="text-[#E5E5E5]">
                     Mama {tipo === 'egreso' && `(${saldoMama.toLocaleString('es-AR')})`}

@@ -336,7 +336,7 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
                   <User className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-[#888888] text-sm">Secretaria</p>
+                  <p className="text-[#888888] text-sm">Eugenia</p>
                   <p className="text-xl font-semibold text-[#E5E5E5]">
                     $ {calcularSaldos.saldoSecretaria.toLocaleString('es-AR')}
                   </p>
@@ -415,7 +415,7 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
               </SelectTrigger>
               <SelectContent className="bg-[#1A1A1A] border-[#2A2A2A]">
                 <SelectItem value="todos" className="text-[#E5E5E5]">Todas</SelectItem>
-                <SelectItem value="secretaria" className="text-[#E5E5E5]">Secretaria</SelectItem>
+                <SelectItem value="secretaria" className="text-[#E5E5E5]">Eugenia</SelectItem>
                 <SelectItem value="mama" className="text-[#E5E5E5]">Mama</SelectItem>
               </SelectContent>
             </Select>
@@ -473,8 +473,8 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
                       </TableCell>
                       <TableCell className="text-[#888888]">
                         {mov.tipo === 'transferencia' 
-                          ? `${mov.de === 'secretaria' ? 'Secretaria' : 'Mama'} → ${mov.para === 'secretaria' ? 'Secretaria' : 'Mama'}`
-                          : mov.enPoderDe === 'secretaria' ? 'Secretaria' : 'Mama'
+                      ? `${mov.de === 'secretaria' ? 'Eugenia' : 'Mama'} → ${mov.para === 'secretaria' ? 'Eugenia' : 'Mama'}`
+                      : mov.enPoderDe === 'secretaria' ? 'Eugenia' : 'Mama'
                         }
                       </TableCell>
                       <TableCell className="text-[#888888]">{mov.registradoPor}</TableCell>
@@ -518,8 +518,8 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
                   <User className="w-6 h-6 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-[#888888] text-sm">Secretaria</p>
-                  <p className="text-2xl font-bold text-[#E5E5E5]">
+                  <p className="text-[#888888] text-sm">Eugenia</p>
+                  <p className="text-2xl font-semibold text-[#E5E5E5]">
                     $ {calcularSaldos.saldoSecretaria.toLocaleString('es-AR')}
                   </p>
                 </div>
@@ -653,7 +653,7 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
                     value="secretaria" 
                     className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400"
                   >
-                    Secretaria
+                    Eugenia
                   </TabsTrigger>
                   <TabsTrigger 
                     value="mama" 

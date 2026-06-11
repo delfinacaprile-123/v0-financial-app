@@ -5,13 +5,29 @@ import type { Movimiento, TipoMovimiento, PersonaCaja } from '@/types/caja'
 
 export const dynamic = 'force-dynamic'
 
+// Normaliza el valor crudo de `en_poder_de` (DB) al slot interno PersonaCaja.
+// Eugenia ES la secretaria, por eso cualquier variante de su nombre mapea a 'secretaria'.
+// Tolera acentos y mayúsculas (ej: 'Eugenia', 'EUGENIA', 'Mamá').
+function normalizePersona(value?: string | null): PersonaCaja {
+  const normalized = (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+
+  if (normalized === 'secretaria' || normalized.startsWith('eugenia')) return 'secretaria'
+  if (normalized === 'mama' || normalized.startsWith('mam')) return 'mama'
+  // Por defecto, tratamos cualquier otro valor como la secretaria (Eugenia)
+  return 'secretaria'
+}
+
 // Mapea una fila de la tabla `caja` (Supabase) al tipo `Movimiento` del cliente
 function mapRowToMovimiento(row: any): Movimiento {
   const tipo: TipoMovimiento =
     row.tipo === 'transferencia_interna' ? 'transferencia' : (row.tipo as TipoMovimiento)
 
   // En la DB, para transferencias guardamos `en_poder_de` = origen (de)
-  const enPoderDeRaw = row.en_poder_de as PersonaCaja
+  const enPoderDeRaw = normalizePersona(row.en_poder_de)
   let de: PersonaCaja | undefined
   let para: PersonaCaja | undefined
   let enPoderDe: PersonaCaja = enPoderDeRaw
