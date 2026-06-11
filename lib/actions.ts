@@ -327,7 +327,7 @@ export async function getMovimientosCaja(mes?: string, anio?: number) {
   const supabase = await createClient()
   let query = supabase
     .from('caja')
-    .select('*, usuarios(*)')
+    .select('*')
     .order('fecha', { ascending: false })
   
   if (mes && anio) {
@@ -616,7 +616,7 @@ export async function getGastos() {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('gastos')
-    .select('*, usuarios(nombre)')
+    .select('*')
     .order('fecha_pago', { ascending: false })
 
   if (error) throw error
