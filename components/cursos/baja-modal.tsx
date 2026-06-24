@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/select'
 import { Alumno } from '@/types/cursos'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { darBajaAlumno } from '@/lib/actions'
 
 interface BajaModalProps {
   isOpen: boolean
@@ -22,6 +24,7 @@ interface BajaModalProps {
 }
 
 export function BajaModal({ isOpen, onClose, alumno, onSuccess }: BajaModalProps) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [tipoBaja, setTipoBaja] = useState<'definitiva' | 'temporal'>('temporal')
 
@@ -31,13 +34,18 @@ export function BajaModal({ isOpen, onClose, alumno, onSuccess }: BajaModalProps
     e.preventDefault()
     setLoading(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    toast.success(`Alumno dado de baja ${tipoBaja}`)
-    onSuccess?.()
-    setLoading(false)
-    onClose()
+    try {
+      await darBajaAlumno(alumno.id, tipoBaja)
+      toast.success(`Alumno dado de baja ${tipoBaja}`)
+      router.refresh()
+      onSuccess?.()
+      onClose()
+    } catch (err) {
+      console.error('[v0] Error dando de baja:', err)
+      toast.error('Error al dar de baja')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

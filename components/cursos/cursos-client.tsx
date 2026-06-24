@@ -231,9 +231,9 @@ export function CursosClient({ cursos, alumnos }: CursosClientProps) {
         cursos={cursos}
       />
 
-      {selectedAlumnoId && (
+      {selectedAlumnoId && alumnos.find(a => a.id === selectedAlumnoId) && (
         <AlumnoPanel
-          alumnoId={selectedAlumnoId}
+          alumno={alumnos.find(a => a.id === selectedAlumnoId)!}
           cursos={cursos}
           onClose={() => setSelectedAlumnoId(null)}
         />

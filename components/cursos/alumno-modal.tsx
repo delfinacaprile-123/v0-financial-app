@@ -15,6 +15,8 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Curso, Alumno } from '@/types/cursos'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { createAlumno, updateAlumno } from '@/lib/actions'
 
 interface AlumnoModalProps {
   isOpen: boolean
@@ -24,6 +26,7 @@ interface AlumnoModalProps {
 }
 
 export function AlumnoModal({ isOpen, onClose, cursos, alumno }: AlumnoModalProps) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
   const [tipo, setTipo] = useState<'normal' | 'beca' | 'descuento'>('normal')
@@ -58,17 +61,32 @@ export function AlumnoModal({ isOpen, onClose, cursos, alumno }: AlumnoModalProp
     e.preventDefault()
     setLoading(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    if (isEditing) {
-      toast.success('Alumno actualizado correctamente')
-    } else {
-      toast.success('Alumno creado correctamente')
+    const payload = {
+      nombre,
+      tipo,
+      descuento_pct: tipo === 'descuento' ? descuentoPct : 0,
+      monto_personalizado:
+        tipo === 'normal' && montoPersonalizado ? parseFloat(montoPersonalizado) : undefined,
+      curso_id: cursoId,
+      notas: notas || undefined,
     }
-    
-    setLoading(false)
-    onClose()
+
+    try {
+      if (isEditing && alumno) {
+        await updateAlumno(alumno.id, payload)
+        toast.success('Alumno actualizado correctamente')
+      } else {
+        await createAlumno(payload)
+        toast.success('Alumno creado correctamente')
+      }
+      router.refresh()
+      onClose()
+    } catch (err) {
+      console.error('[v0] Error guardando alumno:', err)
+      toast.error('Error al guardar el alumno')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const selectedCurso = cursos.find(c => c.id === cursoId)

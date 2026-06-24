@@ -11,48 +11,17 @@ import { BajaModal } from './baja-modal'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
-
-// Mock pagos data
-const mockPagos: Record<string, PagoCurso[]> = {
-  '1': [
-    { id: 'p1', alumno_id: '1', fecha_pago: '2024-04-05', concepto: 'Cuota mensual', monto: 85000, metodo: 'transferencia', mes_correspondiente: 'Abril 2024' },
-    { id: 'p2', alumno_id: '1', fecha_pago: '2024-03-02', concepto: 'Cuota mensual', monto: 85000, metodo: 'mercadopago', mes_correspondiente: 'Marzo 2024' },
-  ],
-  '5': [
-    { id: 'p3', alumno_id: '5', fecha_pago: '2024-04-10', concepto: 'Cuota mensual', monto: 70000, metodo: 'efectivo', mes_correspondiente: 'Abril 2024' },
-  ],
-  '8': [
-    { id: 'p4', alumno_id: '8', fecha_pago: '2024-04-15', concepto: 'Cuota mensual', monto: 75000, metodo: 'transferencia', mes_correspondiente: 'Abril 2024' },
-  ],
-}
-
-// Mock alumnos data (same as in page.tsx)
-const mockCursos: Curso[] = [
-  { id: '1', nombre: 'Modelaje Profesional', precio_mensual: 85000, activo: true },
-  { id: '2', nombre: 'Pasarela Avanzada', precio_mensual: 95000, activo: true },
-  { id: '3', nombre: 'Fotografia y Poses', precio_mensual: 75000, activo: true },
-  { id: '4', nombre: 'Imagen Personal', precio_mensual: 65000, activo: true },
-]
-
-const mockAlumnosMap: Record<string, Alumno> = {
-  '1': { id: '1', nombre: 'Maria Garcia', tipo: 'normal', descuento_pct: 0, curso_id: '1', curso: mockCursos[0], estado: 'activo', fecha_inscripcion: '2024-03-15', es_reincorporacion: false },
-  '2': { id: '2', nombre: 'Ana Martinez', tipo: 'beca', descuento_pct: 0, curso_id: '1', curso: mockCursos[0], estado: 'activo', notas: 'Beca por merito academico', fecha_inscripcion: '2024-02-01', es_reincorporacion: false },
-  '3': { id: '3', nombre: 'Lucia Rodriguez', tipo: 'descuento', descuento_pct: 20, curso_id: '2', curso: mockCursos[1], estado: 'atrasado', notas: 'Debe mes de Abril', fecha_inscripcion: '2024-01-10', es_reincorporacion: false },
-  '4': { id: '4', nombre: 'Sofia Lopez', tipo: 'normal', descuento_pct: 0, curso_id: '3', curso: mockCursos[2], estado: 'atrasado', fecha_inscripcion: '2024-04-01', es_reincorporacion: false },
-  '5': { id: '5', nombre: 'Valentina Torres', tipo: 'normal', descuento_pct: 0, monto_personalizado: 70000, curso_id: '2', curso: mockCursos[1], estado: 'activo', notas: 'Pago acordado especial', fecha_inscripcion: '2024-03-20', es_reincorporacion: false },
-  '6': { id: '6', nombre: 'Camila Fernandez', tipo: 'normal', descuento_pct: 0, curso_id: '4', curso: mockCursos[3], estado: 'baja', fecha_inscripcion: '2023-09-01', es_reincorporacion: false, fecha_baja: '2024-02-15', tipo_baja: 'temporal' },
-  '7': { id: '7', nombre: 'Isabella Gonzalez', tipo: 'descuento', descuento_pct: 15, curso_id: '1', curso: mockCursos[0], estado: 'atrasado', notas: 'Hermana de ex-alumna', fecha_inscripcion: '2024-02-20', es_reincorporacion: false },
-  '8': { id: '8', nombre: 'Emma Diaz', tipo: 'normal', descuento_pct: 0, curso_id: '3', curso: mockCursos[2], estado: 'activo', fecha_inscripcion: '2024-04-10', es_reincorporacion: true },
-}
+import { useRouter } from 'next/navigation'
+import { getPagosCurso, reincorporarAlumno } from '@/lib/actions'
 
 interface AlumnoPanelProps {
-  alumnoId: string
+  alumno: Alumno
   cursos: Curso[]
   onClose: () => void
 }
 
-export function AlumnoPanel({ alumnoId, cursos, onClose }: AlumnoPanelProps) {
-  const [alumno, setAlumno] = useState<Alumno | null>(null)
+export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
+  const router = useRouter()
   const [pagos, setPagos] = useState<PagoCurso[]>([])
   const [loading, setLoading] = useState(true)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -60,26 +29,34 @@ export function AlumnoPanel({ alumnoId, cursos, onClose }: AlumnoPanelProps) {
   const [showBajaModal, setShowBajaModal] = useState(false)
   const [reincorporando, setReincorporando] = useState(false)
 
-  const fetchData = async () => {
+  const fetchPagos = async () => {
     setLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 300))
-    setAlumno(mockAlumnosMap[alumnoId] || null)
-    setPagos(mockPagos[alumnoId] || [])
-    setLoading(false)
+    try {
+      const data = await getPagosCurso(alumno.id)
+      setPagos((data as PagoCurso[]) || [])
+    } catch (err) {
+      console.error('[v0] Error cargando pagos:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
-    fetchData()
-  }, [alumnoId])
+    fetchPagos()
+  }, [alumno.id])
 
   const handleReincorporar = async () => {
-    if (!alumno) return
     setReincorporando(true)
-    await new Promise(resolve => setTimeout(resolve, 500))
-    toast.success('Alumno reincorporado correctamente')
-    setReincorporando(false)
-    fetchData()
+    try {
+      await reincorporarAlumno(alumno.id)
+      toast.success('Alumno reincorporado correctamente')
+      router.refresh()
+    } catch (err) {
+      console.error('[v0] Error reincorporando:', err)
+      toast.error('Error al reincorporar')
+    } finally {
+      setReincorporando(false)
+    }
   }
 
   const calcularMontoEsperado = () => {
@@ -115,16 +92,6 @@ export function AlumnoPanel({ alumnoId, cursos, onClose }: AlumnoPanelProps) {
         return null
     }
   }
-
-  if (loading) {
-    return (
-      <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md items-center justify-center border-l border-border/50 bg-card shadow-2xl">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  if (!alumno) return null
 
   return (
     <>
@@ -240,7 +207,11 @@ export function AlumnoPanel({ alumnoId, cursos, onClose }: AlumnoPanelProps) {
           {/* Payment History */}
           <div>
             <h3 className="mb-3 font-medium text-foreground">Historial de pagos</h3>
-            {pagos.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              </div>
+            ) : pagos.length === 0 ? (
               <p className="text-sm text-muted-foreground">No hay pagos registrados</p>
             ) : (
               <div className="space-y-2">
@@ -276,10 +247,7 @@ export function AlumnoPanel({ alumnoId, cursos, onClose }: AlumnoPanelProps) {
 
       <AlumnoModal
         isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false)
-          fetchData()
-        }}
+        onClose={() => setShowEditModal(false)}
         cursos={cursos}
         alumno={alumno}
       />
@@ -288,17 +256,14 @@ export function AlumnoPanel({ alumnoId, cursos, onClose }: AlumnoPanelProps) {
         isOpen={showPagoModal}
         onClose={() => setShowPagoModal(false)}
         alumno={alumno}
-        onSuccess={fetchData}
+        onSuccess={fetchPagos}
       />
 
       <BajaModal
         isOpen={showBajaModal}
         onClose={() => setShowBajaModal(false)}
         alumno={alumno}
-        onSuccess={() => {
-          fetchData()
-          onClose()
-        }}
+        onSuccess={onClose}
       />
     </>
   )

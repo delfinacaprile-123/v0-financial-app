@@ -15,6 +15,8 @@ import {
 import { Alumno } from '@/types/cursos'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { useRouter } from 'next/navigation'
+import { registrarPagoCurso } from '@/lib/actions'
 
 interface PagoModalProps {
   isOpen: boolean
@@ -29,6 +31,7 @@ const MESES = [
 ]
 
 export function PagoModal({ isOpen, onClose, alumno, onSuccess }: PagoModalProps) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [fechaPago, setFechaPago] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [concepto, setConcepto] = useState('Cuota mensual')
@@ -56,13 +59,25 @@ export function PagoModal({ isOpen, onClose, alumno, onSuccess }: PagoModalProps
     e.preventDefault()
     setLoading(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    toast.success('Pago registrado correctamente')
-    onSuccess?.()
-    setLoading(false)
-    onClose()
+    try {
+      await registrarPagoCurso({
+        alumno_id: alumno.id,
+        fecha_pago: fechaPago,
+        concepto,
+        monto: monto ? parseFloat(monto) : montoEsperado,
+        metodo,
+        mes_correspondiente: mesCorrespondiente,
+      })
+      toast.success('Pago registrado correctamente')
+      router.refresh()
+      onSuccess?.()
+      onClose()
+    } catch (err) {
+      console.error('[v0] Error registrando pago:', err)
+      toast.error('Error al registrar el pago')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const currentYear = new Date().getFullYear()
