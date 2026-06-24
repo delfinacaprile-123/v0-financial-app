@@ -61,10 +61,7 @@ export function ClienteModal({ open, onOpenChange, cliente, onSave }: ClienteMod
     }
 
     setSaving(true)
-    
-    // Simular guardado
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
+
     const nuevoCliente: ClienteTV = {
       id: cliente?.id || crypto.randomUUID(),
       nombre: nombre.trim(),
@@ -74,9 +71,9 @@ export function ClienteModal({ open, onOpenChange, cliente, onSave }: ClienteMod
       activo,
       created_at: cliente?.created_at || new Date().toISOString()
     }
-    
+
+    // La persistencia y el toast de éxito los maneja el componente padre
     onSave(nuevoCliente)
-    toast.success(cliente ? 'Cliente actualizado' : 'Cliente creado')
     setSaving(false)
     onOpenChange(false)
   }

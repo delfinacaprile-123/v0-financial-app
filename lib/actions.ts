@@ -262,41 +262,51 @@ export async function getPagosSocialTV(mes: string, anio: number) {
 export async function togglePagoSocialTV(cliente_id: string, mes: string, anio: number, pagado: boolean, metodo?: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
-  // Check if record exists
-  const { data: existing } = await supabase
+
+  // El `mes` en la DB viene inconsistente ("2026-04" o "04"); comparamos por número de mes.
+  const mm = String(mes).split('-').pop()!.padStart(2, '0')
+  const mesNorm = `${anio}-${mm}`
+
+  // Buscamos un pago MENSUAL existente (no extraordinario) para este cliente/anio/mes,
+  // sin importar el formato en que esté guardado el `mes`.
+  const { data: rows } = await supabase
     .from('pagos_social_tv')
-    .select('id')
+    .select('id, mes, monto_extra')
     .eq('cliente_id', cliente_id)
-    .eq('mes', mes)
     .eq('anio', anio)
-    .single()
-  
+
+  const existing = (rows ?? []).find(
+    (r: any) =>
+      !(r.monto_extra && Number(r.monto_extra) > 0) &&
+      String(r.mes).split('-').pop()!.padStart(2, '0') === mm
+  )
+
   if (existing) {
     const { error } = await supabase
       .from('pagos_social_tv')
-      .update({ 
-        pagado, 
+      .update({
+        mes: mesNorm,
+        pagado,
         fecha_pago: pagado ? new Date().toISOString().split('T')[0] : null,
-        metodo: pagado ? metodo : null
+        metodo: pagado ? metodo : null,
       })
       .eq('id', existing.id)
-    
+
     if (error) throw error
   } else {
     const { error } = await supabase.from('pagos_social_tv').insert({
       cliente_id,
-      mes,
+      mes: mesNorm,
       anio,
       pagado,
       fecha_pago: pagado ? new Date().toISOString().split('T')[0] : null,
       metodo: pagado ? metodo : null,
-      registrado_por: user?.id
+      registrado_por: user?.id,
     })
-    
+
     if (error) throw error
   }
-  
+
   revalidatePath('/social-tv')
 }
 
@@ -317,6 +327,89 @@ export async function createPagoExtraordinario(formData: {
     registrado_por: user?.id
   })
   
+  if (error) throw error
+  revalidatePath('/social-tv')
+}
+
+export async function updatePagoExtraordinario(id: string, formData: {
+  cliente_id: string
+  monto_extra: number
+  descripcion_extra: string
+}) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('pagos_social_tv')
+    .update({
+      cliente_id: formData.cliente_id,
+      monto_extra: formData.monto_extra,
+      descripcion_extra: formData.descripcion_extra,
+    })
+    .eq('id', id)
+  if (error) throw error
+  revalidatePath('/social-tv')
+}
+
+export async function deletePagoSocialTV(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('pagos_social_tv').delete().eq('id', id)
+  if (error) throw error
+  revalidatePath('/social-tv')
+}
+
+// Forma del cliente de Social TV (UI) que mapeamos al esquema real de `clientes`
+export interface ClienteTVInput {
+  nombre: string
+  monto_mensual: number
+  // En la UI es 'metodo_habitual' (transferencia | mercadopago | efectivo)
+  metodo_default: string
+  activo: boolean
+}
+
+// Resuelve el id de la unidad de negocio 'Social TV' (tolera 'social_tv' / 'Social TV')
+async function getUnidadSocialTVId(supabase: any): Promise<string | undefined> {
+  const { data: unidades } = await supabase.from('unidades_negocio').select('id, nombre')
+  const unidad = (unidades ?? []).find((u: any) =>
+    u.nombre?.toLowerCase().replace(/[\s_]/g, '').includes('socialtv')
+  )
+  return unidad?.id
+}
+
+export async function createClienteTV(input: ClienteTVInput) {
+  const supabase = await createClient()
+  const unidadId = await getUnidadSocialTVId(supabase)
+
+  const { error } = await supabase.from('clientes').insert({
+    nombre: input.nombre,
+    monto_mensual: input.monto_mensual,
+    metodo_default: input.metodo_default,
+    activo: input.activo,
+    tipo_cliente: 'fijo', // Social TV son clientes de cuota fija
+    unidad_negocio_id: unidadId,
+  })
+
+  if (error) throw error
+  revalidatePath('/social-tv')
+}
+
+export async function updateClienteTV(id: string, input: ClienteTVInput) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('clientes')
+    .update({
+      nombre: input.nombre,
+      monto_mensual: input.monto_mensual,
+      metodo_default: input.metodo_default,
+      activo: input.activo,
+    })
+    .eq('id', id)
+
+  if (error) throw error
+  revalidatePath('/social-tv')
+}
+
+export async function setClienteTVActivo(id: string, activo: boolean) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('clientes').update({ activo }).eq('id', id)
   if (error) throw error
   revalidatePath('/social-tv')
 }

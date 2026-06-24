@@ -1,6 +1,16 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  togglePagoSocialTV,
+  createPagoExtraordinario,
+  updatePagoExtraordinario,
+  deletePagoSocialTV,
+  createClienteTV,
+  updateClienteTV,
+  setClienteTVActivo,
+} from '@/lib/actions'
 import { 
   Search, 
   Plus, 
@@ -63,6 +73,7 @@ export function SocialTVClient({
   pagosIniciales,
   pagosExtraordinariosIniciales
 }: SocialTVClientProps) {
+  const router = useRouter()
   const [clientes, setClientes] = useState<ClienteTV[]>(clientesIniciales)
   const [pagos, setPagos] = useState<PagoMensualTV[]>(pagosIniciales)
   const [pagosExtra, setPagosExtra] = useState<PagoExtraordinarioTV[]>(pagosExtraordinariosIniciales)
@@ -173,12 +184,23 @@ export function SocialTVClient({
     setMesActual(`${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`)
   }
 
+  // Anio derivado del mes actual ("YYYY-MM")
+  const anioActual = parseInt(mesActual.split('-')[0], 10)
+
   // Handlers
-  const handleTogglePago = (cliente: ClienteTVConPago) => {
+  const handleTogglePago = async (cliente: ClienteTVConPago) => {
     if (cliente.pago_actual?.pagado) {
-      // Deshacer pago
+      // Deshacer pago (optimista)
       setPagos(prev => prev.filter(p => p.id !== cliente.pago_actual!.id))
-      toast.success(`Pago de ${cliente.nombre} deshecho`)
+      try {
+        await togglePagoSocialTV(cliente.id, mesActual, anioActual, false)
+        toast.success(`Pago de ${cliente.nombre} deshecho`)
+        router.refresh()
+      } catch (err) {
+        console.error('[v0] Error al deshacer pago:', err)
+        toast.error('Error al deshacer el pago')
+        router.refresh()
+      }
     } else {
       // Abrir modal para confirmar pago
       setClientePago(cliente)
@@ -186,40 +208,107 @@ export function SocialTVClient({
     }
   }
 
-  const handleConfirmarPago = (pago: PagoMensualTV) => {
+  const handleConfirmarPago = async (pago: PagoMensualTV) => {
+    // Optimista
     setPagos(prev => [...prev.filter(p => !(p.cliente_id === pago.cliente_id && p.mes === pago.mes)), pago])
+    try {
+      await togglePagoSocialTV(pago.cliente_id, mesActual, anioActual, true, pago.metodo_pago)
+      toast.success('Pago registrado')
+      router.refresh()
+    } catch (err) {
+      console.error('[v0] Error al registrar pago:', err)
+      toast.error('Error al registrar el pago')
+      router.refresh()
+    }
   }
 
-  const handleSaveCliente = (cliente: ClienteTV) => {
-    setClientes(prev => {
-      const exists = prev.find(c => c.id === cliente.id)
+  const handleSaveCliente = async (cliente: ClienteTV) => {
+    const exists = clientes.some(c => c.id === cliente.id)
+    // Optimista
+    setClientes(prev =>
+      exists ? prev.map(c => (c.id === cliente.id ? cliente : c)) : [...prev, cliente]
+    )
+    const input = {
+      nombre: cliente.nombre,
+      monto_mensual: cliente.monto_mensual,
+      metodo_default: cliente.metodo_habitual,
+      activo: cliente.activo,
+    }
+    try {
       if (exists) {
-        return prev.map(c => c.id === cliente.id ? cliente : c)
+        await updateClienteTV(cliente.id, input)
+        toast.success('Cliente actualizado')
+      } else {
+        await createClienteTV(input)
+        toast.success('Cliente creado')
       }
-      return [...prev, cliente]
-    })
+      router.refresh()
+    } catch (err) {
+      console.error('[v0] Error al guardar cliente:', err)
+      toast.error('Error al guardar el cliente')
+      router.refresh()
+    }
   }
 
-  const handleSavePagoExtra = (pago: PagoExtraordinarioTV) => {
-    setPagosExtra(prev => {
-      const exists = prev.find(p => p.id === pago.id)
+  const handleSavePagoExtra = async (pago: PagoExtraordinarioTV) => {
+    const exists = pagosExtra.some(p => p.id === pago.id)
+    // Optimista
+    setPagosExtra(prev =>
+      exists ? prev.map(p => (p.id === pago.id ? pago : p)) : [...prev, pago]
+    )
+    try {
       if (exists) {
-        return prev.map(p => p.id === pago.id ? pago : p)
+        await updatePagoExtraordinario(pago.id, {
+          cliente_id: pago.cliente_id,
+          monto_extra: pago.monto,
+          descripcion_extra: pago.descripcion,
+        })
+        toast.success('Pago extraordinario actualizado')
+      } else {
+        await createPagoExtraordinario({
+          cliente_id: pago.cliente_id,
+          mes: mesActual,
+          anio: anioActual,
+          monto_extra: pago.monto,
+          descripcion_extra: pago.descripcion,
+        })
+        toast.success('Pago extraordinario registrado')
       }
-      return [...prev, pago]
-    })
+      router.refresh()
+    } catch (err) {
+      console.error('[v0] Error al guardar pago extraordinario:', err)
+      toast.error('Error al guardar el pago extraordinario')
+      router.refresh()
+    }
   }
 
-  const handleDeletePagoExtra = (id: string) => {
+  const handleDeletePagoExtra = async (id: string) => {
+    const previo = pagosExtra
     setPagosExtra(prev => prev.filter(p => p.id !== id))
-    toast.success('Pago eliminado')
+    try {
+      await deletePagoSocialTV(id)
+      toast.success('Pago eliminado')
+      router.refresh()
+    } catch (err) {
+      console.error('[v0] Error al eliminar pago:', err)
+      toast.error('Error al eliminar el pago')
+      setPagosExtra(previo)
+    }
   }
 
-  const handleDesactivarCliente = () => {
-    if (selectedCliente) {
-      setClientes(prev => prev.map(c => c.id === selectedCliente.id ? { ...c, activo: false } : c))
-      setSelectedCliente(null)
+  const handleDesactivarCliente = async () => {
+    if (!selectedCliente) return
+    const id = selectedCliente.id
+    setClientes(prev => prev.map(c => (c.id === id ? { ...c, activo: false } : c)))
+    setSelectedCliente(null)
+    try {
+      await setClienteTVActivo(id, false)
       toast.success('Cliente desactivado')
+      router.refresh()
+    } catch (err) {
+      console.error('[v0] Error al desactivar cliente:', err)
+      toast.error('Error al desactivar el cliente')
+      router.refresh()
     }
   }
 

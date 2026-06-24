@@ -59,10 +59,7 @@ export function ConfirmarPagoModal({
     }
 
     setSaving(true)
-    
-    // Simular guardado
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
+
     const pago: PagoMensualTV = {
       id: crypto.randomUUID(),
       cliente_id: cliente.id,
@@ -73,9 +70,9 @@ export function ConfirmarPagoModal({
       metodo_pago: metodoPago,
       created_at: new Date().toISOString()
     }
-    
+
+    // La persistencia y el toast de éxito los maneja el componente padre
     onConfirm(pago)
-    toast.success(`Pago de ${cliente.nombre} registrado`)
     setSaving(false)
     onOpenChange(false)
   }

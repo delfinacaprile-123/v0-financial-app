@@ -77,12 +77,9 @@ export function PagoExtraordinarioModal({
     }
 
     setSaving(true)
-    
-    // Simular guardado
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
+
     const cliente = clientes.find(c => c.id === clienteId)
-    
+
     const pago: PagoExtraordinarioTV = {
       id: pagoEdit?.id || crypto.randomUUID(),
       cliente_id: clienteId,
@@ -93,9 +90,9 @@ export function PagoExtraordinarioModal({
       metodo_pago: metodoPago,
       created_at: pagoEdit?.created_at || new Date().toISOString()
     }
-    
+
+    // La persistencia y el toast de éxito los maneja el componente padre
     onSave(pago)
-    toast.success(pagoEdit ? 'Pago actualizado' : 'Pago extraordinario registrado')
     setSaving(false)
     onOpenChange(false)
   }
