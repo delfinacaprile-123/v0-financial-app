@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Plus, Search, Eye, Building2 } from 'lucide-react'
+import { createTrabajo, updateTrabajo, createClienteAgencia } from '@/lib/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -45,6 +48,7 @@ interface AgenciaClientProps {
 type VistaActiva = 'trabajos' | 'clientes' | 'tipos'
 
 export function AgenciaClient({ trabajos: initialTrabajos, clientes: initialClientes }: AgenciaClientProps) {
+  const router = useRouter()
   const [vistaActiva, setVistaActiva] = useState<VistaActiva>('trabajos')
   const [trabajos, setTrabajos] = useState(initialTrabajos)
   const [clientes, setClientes] = useState(initialClientes)

@@ -123,22 +123,29 @@ export async function getPagosCurso(alumno_id: string) {
 
 // ============ AGENCIA ============
 
+// Resuelve el id de la unidad de negocio 'Agencia' de forma determinista.
+// Tolera nombres duplicados/variantes ('agencia' y 'Agencia') eligiendo siempre
+// la misma fila (ordenada por id) para que lecturas y escrituras sean consistentes.
+async function getUnidadAgenciaId(supabase: any): Promise<string | undefined> {
+  const { data: unidades } = await supabase.from('unidades_negocio').select('id, nombre')
+  const matches = (unidades ?? [])
+    .filter((u: any) => u.nombre?.toLowerCase().replace(/[\s_]/g, '') === 'agencia')
+    .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)))
+  return matches[0]?.id
+}
+
 export async function getClientesAgencia() {
   const supabase = await createClient()
-  const { data: unidad } = await supabase
-    .from('unidades_negocio')
-    .select('id')
-    .eq('nombre', 'Agencia')
-    .single()
-  
-  if (!unidad) return []
-  
+  const unidadId = await getUnidadAgenciaId(supabase)
+
+  if (!unidadId) return []
+
   const { data, error } = await supabase
     .from('clientes')
     .select('*')
-    .eq('unidad_negocio_id', unidad.id)
+    .eq('unidad_negocio_id', unidadId)
     .order('nombre')
-  
+
   if (error) throw error
   return data
 }
@@ -154,32 +161,49 @@ export async function getTrabajos() {
   return data
 }
 
+// Crea un cliente de Agencia y devuelve su id
+export async function createClienteAgencia(nombre: string): Promise<string> {
+  const supabase = await createClient()
+  const unidadId = await getUnidadAgenciaId(supabase)
+
+  const { data, error } = await supabase
+    .from('clientes')
+    .insert({
+      nombre,
+      activo: true,
+      tipo_cliente: 'no_fijo', // los clientes de agencia no son de cuota fija
+      unidad_negocio_id: unidadId,
+    })
+    .select('id')
+    .single()
+
+  if (error) throw error
+  revalidatePath('/agencia')
+  return data.id
+}
+
 export async function createTrabajo(formData: {
   cliente_id: string
   tipo: string
   fecha: string
-  concepto?: string
   monto_cobrado: number
   estado: string
+  metodo: string
   notas?: string
   modelos: { nombre_modelo: string; cachet: number }[]
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
-  const { data: unidad } = await supabase
-    .from('unidades_negocio')
-    .select('id')
-    .eq('nombre', 'Agencia')
-    .single()
-  
+
+  const unidadId = await getUnidadAgenciaId(supabase)
+
   const { modelos, ...trabajoData } = formData
-  
+
   const { data: trabajo, error } = await supabase
     .from('trabajos')
     .insert({
       ...trabajoData,
-      unidad_negocio_id: unidad?.id,
+      unidad_negocio_id: unidadId,
       registrado_por: user?.id
     })
     .select()
@@ -203,16 +227,34 @@ export async function updateTrabajo(id: string, formData: {
   cliente_id?: string
   tipo?: string
   fecha?: string
-  concepto?: string
   monto_cobrado?: number
   estado?: string
   metodo?: string
   notas?: string
+  modelos?: { nombre_modelo: string; cachet: number }[]
 }) {
   const supabase = await createClient()
-  const { error } = await supabase.from('trabajos').update(formData).eq('id', id)
-  
+  const { modelos, ...trabajoData } = formData
+
+  const { error } = await supabase.from('trabajos').update(trabajoData).eq('id', id)
   if (error) throw error
+
+  // Si se pasaron modelos, reemplazamos el set completo (borrar + insertar)
+  if (modelos) {
+    const { error: delError } = await supabase
+      .from('modelos_trabajo')
+      .delete()
+      .eq('trabajo_id', id)
+    if (delError) throw delError
+
+    if (modelos.length > 0) {
+      const { error: insError } = await supabase
+        .from('modelos_trabajo')
+        .insert(modelos.map(m => ({ ...m, trabajo_id: id })))
+      if (insError) throw insError
+    }
+  }
+
   revalidatePath('/agencia')
 }
 
