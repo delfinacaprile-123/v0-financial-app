@@ -122,40 +122,51 @@ export function AgenciaClient({ trabajos: initialTrabajos, clientes: initialClie
     }).filter((r) => r.cantidad_trabajos > 0)
   }, [trabajos])
 
-  const handleSaveTrabajo = (trabajoData: Partial<Trabajo>, isNew: boolean) => {
-    if (isNew) {
-      const nuevoTrabajo: Trabajo = {
-        id: Date.now().toString(),
-        cliente_id: trabajoData.cliente_id || '',
-        cliente: trabajoData.cliente || clientes.find((c) => c.id === trabajoData.cliente_id) || clientes[0],
+  const handleSaveTrabajo = async (trabajoData: Partial<Trabajo>, isNew: boolean) => {
+    // Cerramos el flujo del modal de inmediato; la lista se refresca desde el servidor.
+    const editing = editingTrabajo
+    setEditingTrabajo(null)
+    setPreselectedClienteId(undefined)
+
+    try {
+      // Resolver cliente: si viene un cliente nuevo (id que no existe aún), lo creamos primero.
+      let clienteId = trabajoData.cliente_id || trabajoData.cliente?.id || ''
+      const clienteNuevo =
+        trabajoData.cliente && !clientes.find((c) => c.id === trabajoData.cliente?.id)
+          ? trabajoData.cliente
+          : null
+
+      if (clienteNuevo) {
+        clienteId = await createClienteAgencia(clienteNuevo.nombre)
+      }
+
+      const payload = {
+        cliente_id: clienteId,
         tipo: trabajoData.tipo || 'produccion',
         fecha: trabajoData.fecha || new Date().toISOString().split('T')[0],
         monto_cobrado: trabajoData.monto_cobrado || 0,
         estado: trabajoData.estado || 'pendiente',
-        metodo_pago: trabajoData.metodo_pago || 'transferencia',
+        metodo: trabajoData.metodo_pago || 'transferencia',
         notas: trabajoData.notas,
-        modelos: trabajoData.modelos || [],
+        modelos: (trabajoData.modelos || []).map((m) => ({
+          nombre_modelo: m.nombre,
+          cachet: m.cachet,
+        })),
       }
-      
-      // Si es un cliente nuevo, agregarlo
-      if (trabajoData.cliente && !clientes.find((c) => c.id === trabajoData.cliente?.id)) {
-        setClientes([...clientes, trabajoData.cliente])
-        nuevoTrabajo.cliente = trabajoData.cliente
-        nuevoTrabajo.cliente_id = trabajoData.cliente.id
+
+      if (isNew) {
+        await createTrabajo(payload)
+        toast.success('Trabajo registrado')
+      } else if (editing) {
+        await updateTrabajo(editing.id, payload)
+        toast.success('Trabajo actualizado')
       }
-      
-      setTrabajos([nuevoTrabajo, ...trabajos])
-    } else if (editingTrabajo) {
-      setTrabajos(
-        trabajos.map((t) =>
-          t.id === editingTrabajo.id
-            ? { ...t, ...trabajoData, cliente: clientes.find((c) => c.id === trabajoData.cliente_id) || t.cliente }
-            : t
-        )
-      )
+      router.refresh()
+    } catch (err) {
+      console.error('[v0] Error al guardar trabajo:', err)
+      toast.error('Error al guardar el trabajo')
+      router.refresh()
     }
-    setEditingTrabajo(null)
-    setPreselectedClienteId(undefined)
   }
 
   const handleNuevoTrabajoParaCliente = (clienteId: string) => {

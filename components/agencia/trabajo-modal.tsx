@@ -121,7 +121,7 @@ export function TrabajoModal({
       }
 
       if (creandoCliente && nuevoCliente.trim()) {
-        // En modo real, aquí crearíamos el cliente primero
+        // Cliente nuevo: el padre lo persiste antes de crear el trabajo.
         trabajoData.cliente = {
           id: Date.now().toString(),
           nombre: nuevoCliente.trim(),
@@ -129,11 +129,11 @@ export function TrabajoModal({
         }
       }
 
+      // La persistencia y el toast de éxito/error los maneja el componente padre
       onSave(trabajoData, !trabajo)
-      toast.success(trabajo ? 'Trabajo actualizado' : 'Trabajo creado')
       onClose()
     } catch {
-      toast.error('Error al guardar el trabajo')
+      toast.error('Error al preparar el trabajo')
     } finally {
       setIsSubmitting(false)
     }
