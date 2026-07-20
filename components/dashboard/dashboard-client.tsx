@@ -119,9 +119,9 @@ const PRODUCTOS: ProductoIngreso[] = [
   { nombre: 'Fotos', monto: 280000, color: '#8FB3C9', unidad: 'agencia' }
 ]
 
-const CAJA_DATA = {
-  secretaria: 105000,
-  mama: 320000
+interface CajaSaldos {
+  secretaria: number
+  mama: number
 }
 
 // Helpers
@@ -540,8 +540,8 @@ function EvolutionPanel({ data, period }: { data: EvolutionData[]; period: strin
   )
 }
 
-function CajaPanel() {
-  const total = CAJA_DATA.secretaria + CAJA_DATA.mama
+function CajaPanel({ caja }: { caja: CajaSaldos }) {
+  const total = caja.secretaria + caja.mama
 
   return (
     <Card className="bg-[#111111] border-[rgba(201,169,110,0.15)]">
@@ -560,12 +560,12 @@ function CajaPanel() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-lg">
-          <span className="text-[#E8E8E8]">Secretaria</span>
-          <span className="text-green-500 font-medium">{formatMoney(CAJA_DATA.secretaria)}</span>
+          <span className="text-[#E8E8E8]">Eugenia</span>
+          <span className="text-green-500 font-medium">{formatMoney(caja.secretaria)}</span>
         </div>
         <div className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-lg">
           <span className="text-[#E8E8E8]">Mama</span>
-          <span className="text-green-500 font-medium">{formatMoney(CAJA_DATA.mama)}</span>
+          <span className="text-green-500 font-medium">{formatMoney(caja.mama)}</span>
         </div>
         <div className="border-t border-[rgba(201,169,110,0.15)] pt-4">
           <div className="flex items-center justify-between">
@@ -620,7 +620,7 @@ function ProductosPanel({ productos }: { productos: ProductoIngreso[] }) {
 }
 
 // Main Dashboard Component
-export function DashboardClient() {
+export function DashboardClient({ caja }: { caja: CajaSaldos }) {
   const [period, setPeriod] = useState('6m')
   const [compareMode, setCompareMode] = useState(false)
   const [comparePeriod1, setComparePeriod1] = useState('abril-2026')
@@ -711,7 +711,7 @@ export function DashboardClient() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <AlertsPanel alerts={ALERTS} />
         <EvolutionPanel data={EVOLUTION_DATA} period={period} />
-        <CajaPanel />
+        <CajaPanel caja={caja} />
         <ProductosPanel productos={PRODUCTOS} />
       </div>
     </div>
