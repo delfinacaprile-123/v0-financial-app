@@ -301,6 +301,50 @@ export async function getClientesSocialTV() {
   return data
 }
 
+// Devuelve los clientes ACTIVOS de Social TV que NO tienen registrado el pago
+// mensual del mes/año indicado. Tolera la unidad duplicada ('social_tv' / 'Social TV')
+// y el formato inconsistente del campo `mes` ("2026-07" o "07").
+export async function getClientesTVSinPago(mes: number, anio: number) {
+  const supabase = await createClient()
+
+  // Resolver la(s) unidad(es) de Social TV
+  const { data: unidades } = await supabase.from('unidades_negocio').select('id, nombre')
+  const unidadIds = (unidades ?? [])
+    .filter((u: any) => u.nombre?.toLowerCase().replace(/[\s_]/g, '') === 'socialtv')
+    .map((u: any) => u.id)
+
+  if (unidadIds.length === 0) return []
+
+  const { data: clientes } = await supabase
+    .from('clientes')
+    .select('id, nombre')
+    .in('unidad_negocio_id', unidadIds)
+    .eq('activo', true)
+    .order('nombre')
+
+  if (!clientes || clientes.length === 0) return []
+
+  // Pagos mensuales (no extraordinarios) pagados del año indicado
+  const { data: pagos } = await supabase
+    .from('pagos_social_tv')
+    .select('cliente_id, mes, monto_extra, pagado')
+    .eq('anio', anio)
+    .eq('pagado', true)
+
+  const mm = String(mes).padStart(2, '0')
+  const clientesPagados = new Set(
+    (pagos ?? [])
+      .filter(
+        (p: any) =>
+          !(p.monto_extra && Number(p.monto_extra) > 0) &&
+          String(p.mes).split('-').pop()!.padStart(2, '0') === mm
+      )
+      .map((p: any) => p.cliente_id)
+  )
+
+  return clientes.filter((c: any) => !clientesPagados.has(c.id))
+}
+
 export async function getPagosSocialTV(mes: string, anio: number) {
   const supabase = await createClient()
   const { data, error } = await supabase

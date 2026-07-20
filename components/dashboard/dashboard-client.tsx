@@ -102,14 +102,6 @@ const MINI_BAR_DATA = [
   { mes: 'Abr', total: 3380 }
 ]
 
-const ALERTS: Alert[] = [
-  { id: '1', nombre: 'Emma C.', modulo: 'cursos', descripcion: '2 meses sin pago - Modelaje Profesional', tipo: 'revisar' },
-  { id: '2', nombre: 'Valentina R.', modulo: 'cursos', descripcion: 'Sin pago abril - Pasarela Avanzada', tipo: 'atrasada' },
-  { id: '3', nombre: 'Camila L.', modulo: 'cursos', descripcion: 'Sin pago abril - Imagen Personal', tipo: 'atrasada' },
-  { id: '4', nombre: 'Canal 3 Rosario', modulo: 'social-tv', descripcion: 'Sin marcar pago abril', tipo: 'pendiente' },
-  { id: '5', nombre: 'Banco Macro', modulo: 'social-tv', descripcion: 'Sin marcar pago abril', tipo: 'pendiente' }
-]
-
 const PRODUCTOS: ProductoIngreso[] = [
   { nombre: 'Cuotas cursos', monto: 980000, color: '#C9A96E', unidad: 'cursos' },
   { nombre: 'Producciones', monto: 870000, color: '#8FB3C9', unidad: 'agencia' },
@@ -620,7 +612,7 @@ function ProductosPanel({ productos }: { productos: ProductoIngreso[] }) {
 }
 
 // Main Dashboard Component
-export function DashboardClient({ caja }: { caja: CajaSaldos }) {
+export function DashboardClient({ caja, alertas }: { caja: CajaSaldos; alertas: Alert[] }) {
   const [period, setPeriod] = useState('6m')
   const [compareMode, setCompareMode] = useState(false)
   const [comparePeriod1, setComparePeriod1] = useState('abril-2026')
@@ -709,7 +701,7 @@ export function DashboardClient({ caja }: { caja: CajaSaldos }) {
 
       {/* Bottom Panels - 2x2 Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <AlertsPanel alerts={ALERTS} />
+        <AlertsPanel alerts={alertas} />
         <EvolutionPanel data={EVOLUTION_DATA} period={period} />
         <CajaPanel caja={caja} />
         <ProductosPanel productos={PRODUCTOS} />
