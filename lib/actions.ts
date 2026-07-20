@@ -121,6 +121,18 @@ export async function getPagosCurso(alumno_id: string) {
   return data
 }
 
+// Devuelve todos los pagos de cursos (solo campos necesarios) para calcular
+// qué alumnos están al día vs. atrasados según el mes que cubre cada pago.
+export async function getAllPagosCursos() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('pagos_cursos')
+    .select('alumno_id, mes_correspondiente, fecha_pago')
+
+  if (error) throw error
+  return data
+}
+
 // ============ AGENCIA ============
 
 // Resuelve el id de la unidad de negocio 'Agencia' de forma determinista.
