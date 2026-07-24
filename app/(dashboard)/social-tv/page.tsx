@@ -65,6 +65,7 @@ export default async function SocialTVPage() {
       return {
         id: c.id,
         nombre: c.nombre,
+        tipo_cliente: c.tipo_cliente === 'no_fijo' ? 'no_fijo' : 'fijo',
         tipo_servicio: tipo,
         monto_mensual: monto,
         metodo_habitual: metodo,

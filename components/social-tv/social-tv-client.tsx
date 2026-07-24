@@ -230,6 +230,7 @@ export function SocialTVClient({
     )
     const input = {
       nombre: cliente.nombre,
+      tipo_cliente: cliente.tipo_cliente,
       monto_mensual: cliente.monto_mensual,
       metodo_default: cliente.metodo_habitual,
       activo: cliente.activo,

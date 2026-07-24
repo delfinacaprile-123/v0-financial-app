@@ -457,6 +457,8 @@ export async function deletePagoSocialTV(id: string) {
 // Forma del cliente de Social TV (UI) que mapeamos al esquema real de `clientes`
 export interface ClienteTVInput {
   nombre: string
+  // 'fijo' | 'no_fijo' (valores válidos del CHECK de clientes.tipo_cliente)
+  tipo_cliente: string
   monto_mensual: number
   // En la UI es 'metodo_habitual' (transferencia | mercadopago | efectivo)
   metodo_default: string
@@ -481,7 +483,7 @@ export async function createClienteTV(input: ClienteTVInput) {
     monto_mensual: input.monto_mensual,
     metodo_default: input.metodo_default,
     activo: input.activo,
-    tipo_cliente: 'fijo', // Social TV son clientes de cuota fija
+    tipo_cliente: input.tipo_cliente || 'fijo',
     unidad_negocio_id: unidadId,
   })
 
@@ -495,6 +497,7 @@ export async function updateClienteTV(id: string, input: ClienteTVInput) {
     .from('clientes')
     .update({
       nombre: input.nombre,
+      tipo_cliente: input.tipo_cliente || 'fijo',
       monto_mensual: input.monto_mensual,
       metodo_default: input.metodo_default,
       activo: input.activo,

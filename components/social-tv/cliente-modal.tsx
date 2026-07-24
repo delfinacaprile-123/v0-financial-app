@@ -11,9 +11,11 @@ import { toast } from 'sonner'
 import { 
   ClienteTV, 
   TipoServicioTV, 
+  TipoClienteTV,
   MetodoPagoTV,
   tipoServicioTVConfig,
-  metodoPagoTVConfig 
+  metodoPagoTVConfig,
+  tipoClienteTVConfig
 } from '@/types/social-tv'
 
 interface ClienteModalProps {
@@ -25,6 +27,7 @@ interface ClienteModalProps {
 
 export function ClienteModal({ open, onOpenChange, cliente, onSave }: ClienteModalProps) {
   const [nombre, setNombre] = useState('')
+  const [tipoCliente, setTipoCliente] = useState<TipoClienteTV>('fijo')
   const [tipoServicio, setTipoServicio] = useState<TipoServicioTV>('produccion')
   const [montoMensual, setMontoMensual] = useState('')
   const [metodoHabitual, setMetodoHabitual] = useState<MetodoPagoTV>('transferencia')
@@ -34,12 +37,14 @@ export function ClienteModal({ open, onOpenChange, cliente, onSave }: ClienteMod
   useEffect(() => {
     if (cliente) {
       setNombre(cliente.nombre)
+      setTipoCliente(cliente.tipo_cliente ?? 'fijo')
       setTipoServicio(cliente.tipo_servicio)
       setMontoMensual(cliente.monto_mensual.toString())
       setMetodoHabitual(cliente.metodo_habitual)
       setActivo(cliente.activo)
     } else {
       setNombre('')
+      setTipoCliente('fijo')
       setTipoServicio('produccion')
       setMontoMensual('')
       setMetodoHabitual('transferencia')
@@ -65,6 +70,7 @@ export function ClienteModal({ open, onOpenChange, cliente, onSave }: ClienteMod
     const nuevoCliente: ClienteTV = {
       id: cliente?.id || crypto.randomUUID(),
       nombre: nombre.trim(),
+      tipo_cliente: tipoCliente,
       tipo_servicio: tipoServicio,
       monto_mensual: parseFloat(montoMensual),
       metodo_habitual: metodoHabitual,
@@ -96,6 +102,22 @@ export function ClienteModal({ open, onOpenChange, cliente, onSave }: ClienteMod
               placeholder="Ej: Melocotón"
               className="bg-[#0A0A0A] border-[rgba(176,158,201,0.2)] text-[#E5E5E5] focus:border-[#B09EC9]"
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-[#888888]">Tipo de cliente</Label>
+            <Select value={tipoCliente} onValueChange={(v) => setTipoCliente(v as TipoClienteTV)}>
+              <SelectTrigger className="bg-[#0A0A0A] border-[rgba(176,158,201,0.2)] text-[#E5E5E5]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1A1A1A] border-[rgba(176,158,201,0.2)]">
+                {Object.entries(tipoClienteTVConfig).map(([key, { label }]) => (
+                  <SelectItem key={key} value={key} className="text-[#E5E5E5]">
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">

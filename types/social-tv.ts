@@ -1,9 +1,11 @@
 export type TipoServicioTV = 'desfile' | 'produccion' | 'foto' | 'promo' | 'otro'
 export type MetodoPagoTV = 'transferencia' | 'mercadopago' | 'efectivo'
+export type TipoClienteTV = 'fijo' | 'no_fijo'
 
 export interface ClienteTV {
   id: string
   nombre: string
+  tipo_cliente: TipoClienteTV
   tipo_servicio: TipoServicioTV
   monto_mensual: number
   metodo_habitual: MetodoPagoTV
@@ -79,4 +81,9 @@ export const metodoPagoTVConfig: Record<MetodoPagoTV, { label: string }> = {
   transferencia: { label: 'Transferencia' },
   mercadopago: { label: 'Mercado Pago' },
   efectivo: { label: 'Efectivo' },
+}
+
+export const tipoClienteTVConfig: Record<TipoClienteTV, { label: string }> = {
+  fijo: { label: 'Fijo' },
+  no_fijo: { label: 'No fijo' },
 }
