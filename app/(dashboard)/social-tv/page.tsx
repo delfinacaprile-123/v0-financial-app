@@ -40,11 +40,12 @@ export default async function SocialTVPage() {
 
   if (unidadTV) {
     const [{ data: clientesRaw }, { data: pagosRaw }] = await Promise.all([
+      // No filtramos por activo=true: los clientes inactivos deben seguir
+      // cargándose para preservar la visibilidad de sus pagos históricos.
       supabase
         .from('clientes')
         .select('*')
         .eq('unidad_negocio_id', unidadTV.id)
-        .eq('activo', true)
         .order('nombre'),
       supabase
         .from('pagos_social_tv')

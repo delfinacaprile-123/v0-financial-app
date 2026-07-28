@@ -99,15 +99,30 @@ export function SocialTVClient({
   // Filtros para pagos extraordinarios
   const [filtroClienteExtra, setFiltroClienteExtra] = useState<string>('todos')
 
-  // Clientes con estado de pago del mes actual
+  // Clientes que aparecen en el checklist del mes actual.
+  // Regla de pertenencia para el mes M:
+  //  - Si el cliente tiene un pago registrado en M => siempre se muestra
+  //    (preserva el historial, incluso de clientes inactivos o no fijos).
+  //  - Si no tiene pago en M => solo genera fila de cobro si está activo y:
+  //      * es 'fijo' (aparece todos los meses), o
+  //      * es 'no_fijo' y M es su mes de alta.
   const clientesConPago = useMemo<ClienteTVConPago[]>(() => {
-    return clientes.filter(c => c.activo).map(cliente => {
-      const pagoMes = pagos.find(p => p.cliente_id === cliente.id && p.mes === mesActual)
-      return {
-        ...cliente,
-        pago_actual: pagoMes
-      }
-    })
+    return clientes
+      .filter(cliente => {
+        const tienePagoMes = pagos.some(p => p.cliente_id === cliente.id && p.mes === mesActual)
+        if (tienePagoMes) return true
+        if (!cliente.activo) return false
+        if (cliente.tipo_cliente === 'fijo') return true
+        const mesAlta = cliente.created_at ? cliente.created_at.slice(0, 7) : null
+        return mesAlta === mesActual
+      })
+      .map(cliente => {
+        const pagoMes = pagos.find(p => p.cliente_id === cliente.id && p.mes === mesActual)
+        return {
+          ...cliente,
+          pago_actual: pagoMes
+        }
+      })
   }, [clientes, pagos, mesActual])
 
   // Filtrar por búsqueda
@@ -117,10 +132,9 @@ export function SocialTVClient({
     return clientesConPago.filter(c => c.nombre.toLowerCase().includes(query))
   }, [clientesConPago, searchQuery])
 
-  // KPIs del mes
+  // KPIs del mes (consistentes con las filas mostradas en el checklist)
   const kpis = useMemo(() => {
-    const activos = clientes.filter(c => c.activo)
-    const totalEsperado = activos.reduce((sum, c) => sum + c.monto_mensual, 0)
+    const totalEsperado = clientesConPago.reduce((sum, c) => sum + c.monto_mensual, 0)
     const totalCobrado = clientesConPago
       .filter(c => c.pago_actual?.pagado)
       .reduce((sum, c) => sum + (c.pago_actual?.monto || c.monto_mensual), 0)
@@ -128,7 +142,7 @@ export function SocialTVClient({
     const pendientes = clientesConPago.filter(c => !c.pago_actual?.pagado).length
     
     return { totalEsperado, totalCobrado, totalPendiente, pendientes }
-  }, [clientes, clientesConPago])
+  }, [clientesConPago])
 
   // Alerta si estamos pasada la primera semana y hay pendientes
   const mostrarAlerta = useMemo(() => {
@@ -725,7 +739,7 @@ export function SocialTVClient({
       <PagoExtraordinarioModal
         open={pagoExtraModalOpen}
         onOpenChange={setPagoExtraModalOpen}
-        clientes={clientes}
+        clientes={clientes.filter(c => c.activo)}
         pagoEdit={pagoExtraEdit}
         onSave={handleSavePagoExtra}
       />
