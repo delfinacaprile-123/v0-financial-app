@@ -10,6 +10,7 @@ export interface SolicitudCorreccion {
   id: string
   descripcion: string
   modulo: string
+  referencia: string | null
   solicitante: string
   created_at: string
 }
@@ -62,6 +63,9 @@ export function SolicitudesPanel({ solicitudes }: { solicitudes: SolicitudCorrec
                 <span className="rounded bg-[rgba(176,158,201,0.15)] px-2 py-0.5 text-xs text-[#B09EC9]">
                   {MODULO_LABEL[s.modulo] ?? s.modulo}
                 </span>
+                {s.referencia && (
+                  <span className="text-xs font-medium text-[#E8E8E8]">{s.referencia}</span>
+                )}
                 <span className="text-xs text-[#888888]">Por: {s.solicitante}</span>
               </div>
               <p className="text-sm text-[#E8E8E8]">{s.descripcion}</p>

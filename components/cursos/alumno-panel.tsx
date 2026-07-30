@@ -228,21 +228,6 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
               <PhoneCall className="mr-2 h-4 w-4" />
               Seguimiento
             </Button>
-            {puedeSolicitarCorreccion && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
-                onClick={() =>
-                  setCorreccionDescripcion(
-                    `Correccion sobre el alumno ${alumno.nombre}: `
-                  )
-                }
-              >
-                <MessageSquareWarning className="mr-2 h-4 w-4" />
-                Solicitar correccion
-              </Button>
-            )}
             {alumno.estado === 'baja' && alumno.tipo_baja === 'temporal' && (
               <Button
                 size="sm"
@@ -291,6 +276,23 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
                         </p>
                       </div>
                     </div>
+                    {puedeSolicitarCorreccion && (
+                      <div className="mt-2 flex justify-end border-t border-border/40 pt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1.5 px-2 text-xs text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                          onClick={() =>
+                            setCorreccionDescripcion(
+                              `Correccion en pago "${pago.concepto}" (${pago.mes_correspondiente}, $${pago.monto.toLocaleString()}): `
+                            )
+                          }
+                        >
+                          <MessageSquareWarning className="h-3.5 w-3.5" />
+                          Solicitar correccion
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -364,6 +366,7 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
         isOpen={correccionDescripcion !== null}
         onClose={() => setCorreccionDescripcion(null)}
         modulo="cursos"
+        referencia={alumno.nombre}
         defaultDescripcion={correccionDescripcion ?? ''}
       />
     </>

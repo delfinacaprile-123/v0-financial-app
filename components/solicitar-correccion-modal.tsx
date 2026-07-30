@@ -12,6 +12,8 @@ interface SolicitarCorreccionModalProps {
   isOpen: boolean
   onClose: () => void
   modulo: string
+  /** Nombre del alumno/cliente al que refiere la correccion */
+  referencia?: string
   /** Texto inicial opcional para pre-poblar la descripcion (ej: referencia al pago) */
   defaultDescripcion?: string
   onSuccess?: () => void
@@ -21,6 +23,7 @@ export function SolicitarCorreccionModal({
   isOpen,
   onClose,
   modulo,
+  referencia,
   defaultDescripcion = '',
   onSuccess,
 }: SolicitarCorreccionModalProps) {
@@ -42,7 +45,7 @@ export function SolicitarCorreccionModal({
     }
     setLoading(true)
     try {
-      await createSolicitudCorreccion({ descripcion: descripcion.trim(), modulo })
+      await createSolicitudCorreccion({ descripcion: descripcion.trim(), modulo, referencia })
       toast.success('Solicitud de correccion enviada')
       onSuccess?.()
       onClose()

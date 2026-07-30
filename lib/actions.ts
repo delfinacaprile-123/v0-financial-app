@@ -787,6 +787,7 @@ export async function getAllClientes() {
 export async function createSolicitudCorreccion(formData: {
   descripcion: string
   modulo: string
+  referencia?: string
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -794,6 +795,7 @@ export async function createSolicitudCorreccion(formData: {
   const { error } = await supabase.from('solicitudes_correccion').insert({
     descripcion: formData.descripcion,
     modulo: formData.modulo,
+    referencia: formData.referencia ?? null,
     registrado_por: user?.id,
     estado: 'pendiente',
   })
