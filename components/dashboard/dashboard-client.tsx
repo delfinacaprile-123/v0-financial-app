@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { SolicitudesPanel, type SolicitudCorreccion } from './solicitudes-panel'
 import {
   BarChart,
   Bar,
@@ -612,7 +613,15 @@ function ProductosPanel({ productos }: { productos: ProductoIngreso[] }) {
 }
 
 // Main Dashboard Component
-export function DashboardClient({ caja, alertas }: { caja: CajaSaldos; alertas: Alert[] }) {
+export function DashboardClient({
+  caja,
+  alertas,
+  solicitudes = [],
+}: {
+  caja: CajaSaldos
+  alertas: Alert[]
+  solicitudes?: SolicitudCorreccion[]
+}) {
   const [period, setPeriod] = useState('6m')
   const [compareMode, setCompareMode] = useState(false)
   const [comparePeriod1, setComparePeriod1] = useState('abril-2026')
@@ -698,6 +707,9 @@ export function DashboardClient({ caja, alertas }: { caja: CajaSaldos; alertas: 
           href="/social-tv"
         />
       </div>
+
+      {/* Solicitudes de correccion (solo visibles para la admin) */}
+      {solicitudes.length > 0 && <SolicitudesPanel solicitudes={solicitudes} />}
 
       {/* Bottom Panels - 2x2 Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

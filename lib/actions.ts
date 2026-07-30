@@ -780,6 +780,66 @@ export async function getAllClientes() {
   return data
 }
 
+// ============ SOLICITUDES DE CORRECCION ============
+
+// La rol 'administrativa' (Eugenia) no edita/elimina pagos directamente:
+// crea una solicitud de correccion que la 'admin' (Maria) resuelve desde el Dashboard.
+export async function createSolicitudCorreccion(formData: {
+  descripcion: string
+  modulo: string
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await supabase.from('solicitudes_correccion').insert({
+    descripcion: formData.descripcion,
+    modulo: formData.modulo,
+    registrado_por: user?.id,
+    estado: 'pendiente',
+  })
+
+  if (error) throw error
+  revalidatePath('/dashboard')
+}
+
+export async function getSolicitudesPendientes() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('solicitudes_correccion')
+    .select('*, usuarios(nombre)')
+    .eq('estado', 'pendiente')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function resolverSolicitudCorreccion(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('solicitudes_correccion')
+    .update({ estado: 'resuelta' })
+    .eq('id', id)
+
+  if (error) throw error
+  revalidatePath('/dashboard')
+}
+
+// Devuelve el rol del usuario autenticado ('admin' | 'administrativa') o null.
+export async function getRolActual(): Promise<string | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data } = await supabase
+    .from('usuarios')
+    .select('rol')
+    .eq('id', user.id)
+    .single()
+
+  return data?.rol ?? null
+}
+
 // ============ DASHBOARD ============
 
 export async function getDashboardStats() {

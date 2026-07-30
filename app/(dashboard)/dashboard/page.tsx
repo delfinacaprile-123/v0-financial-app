@@ -1,5 +1,10 @@
 import { DashboardClient } from '@/components/dashboard/dashboard-client'
-import { getMovimientosCaja, getClientesTVSinPago } from '@/lib/actions'
+import {
+  getMovimientosCaja,
+  getClientesTVSinPago,
+  getRolActual,
+  getSolicitudesPendientes,
+} from '@/lib/actions'
 import { mapRowToMovimiento, calcularSaldos } from '@/lib/caja-utils'
 
 export const dynamic = 'force-dynamic'
@@ -15,10 +20,14 @@ export default async function DashboardPage() {
   const anioActual = now.getFullYear()
   const nombreMes = MESES_ES[now.getMonth()]
 
-  const [rows, clientesSinPago] = await Promise.all([
+  const [rows, clientesSinPago, rol] = await Promise.all([
     getMovimientosCaja(),
     getClientesTVSinPago(mesActual, anioActual),
+    getRolActual(),
   ])
+
+  // Solo la admin (Maria) ve y resuelve las solicitudes de correccion
+  const solicitudes = rol === 'admin' ? await getSolicitudesPendientes() : []
 
   const movimientos = (rows ?? []).map(mapRowToMovimiento)
   const { saldoSecretaria, saldoMama } = calcularSaldos(movimientos)
@@ -32,10 +41,19 @@ export default async function DashboardPage() {
     tipo: 'pendiente' as const,
   }))
 
+  const solicitudesCorreccion = (solicitudes ?? []).map((s: any) => ({
+    id: s.id,
+    descripcion: s.descripcion,
+    modulo: s.modulo,
+    solicitante: s.usuarios?.nombre ?? 'Administrativa',
+    created_at: s.created_at,
+  }))
+
   return (
     <DashboardClient
       caja={{ secretaria: saldoSecretaria, mama: saldoMama }}
       alertas={alertas}
+      solicitudes={solicitudesCorreccion}
     />
   )
 }

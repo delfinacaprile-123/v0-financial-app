@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/page-header'
 import { CursosClient } from '@/components/cursos/cursos-client'
-import { getCursos, getAlumnos, getAllPagosCursos } from '@/lib/actions'
+import { getCursos, getAlumnos, getAllPagosCursos, getRolActual } from '@/lib/actions'
 import type { Curso, Alumno } from '@/types/cursos'
 
 export const dynamic = 'force-dynamic'
@@ -37,10 +37,11 @@ function mesCorrespondienteToIndex(value?: string | null): number | null {
 }
 
 export default async function CursosPage() {
-  const [cursosRaw, alumnosRaw, pagosRaw] = await Promise.all([
+  const [cursosRaw, alumnosRaw, pagosRaw, rol] = await Promise.all([
     getCursos(),
     getAlumnos(),
     getAllPagosCursos(),
+    getRolActual(),
   ])
 
   const cursos: Curso[] = (cursosRaw ?? []).map(mapCurso)
@@ -94,7 +95,7 @@ export default async function CursosPage() {
         title="Cursos"
         description="Gestion de alumnos y pagos de cursos"
       />
-      <CursosClient cursos={cursos} alumnos={alumnos} />
+      <CursosClient cursos={cursos} alumnos={alumnos} rol={rol} />
     </div>
   )
 }

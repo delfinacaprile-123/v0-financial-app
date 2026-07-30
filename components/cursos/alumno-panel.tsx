@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, CreditCard, Edit2, UserMinus, RotateCcw, Loader2, PhoneCall } from 'lucide-react'
+import { X, CreditCard, Edit2, UserMinus, RotateCcw, Loader2, PhoneCall, MessageSquareWarning } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -16,6 +16,7 @@ import { AlumnoModal } from './alumno-modal'
 import { PagoModal } from './pago-modal'
 import { BajaModal } from './baja-modal'
 import { SeguimientoModal } from './seguimiento-modal'
+import { SolicitarCorreccionModal } from '@/components/solicitar-correccion-modal'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -25,10 +26,11 @@ import { getPagosCurso, reincorporarAlumno, getSeguimientos } from '@/lib/action
 interface AlumnoPanelProps {
   alumno: Alumno
   cursos: Curso[]
+  rol: string | null
   onClose: () => void
 }
 
-export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
+export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) {
   const router = useRouter()
   const [pagos, setPagos] = useState<PagoCurso[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,7 +40,10 @@ export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
   const [showSeguimientoModal, setShowSeguimientoModal] = useState(false)
   const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([])
   const [reincorporando, setReincorporando] = useState(false)
+  // Solicitud de correccion (solo rol administrativa). Guarda el texto pre-poblado del pago.
+  const [correccionDescripcion, setCorreccionDescripcion] = useState<string | null>(null)
 
+  const esAdministrativa = rol === 'administrativa'
   const necesitaSeguimiento = alumno.estado === 'atrasado' || alumno.estado === 'baja'
 
   const fetchPagos = async () => {
@@ -251,25 +256,44 @@ export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
                 {pagos.map((pago) => (
                   <div
                     key={pago.id}
-                    className="flex items-center justify-between rounded-lg bg-muted/30 p-3"
+                    className="rounded-lg bg-muted/30 p-3"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        {pago.concepto}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {pago.mes_correspondiente} &middot;{' '}
-                        {format(new Date(pago.fecha_pago), 'dd/MM/yyyy')}
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {pago.concepto}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {pago.mes_correspondiente} &middot;{' '}
+                          {format(new Date(pago.fecha_pago), 'dd/MM/yyyy')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-primary">
+                          ${pago.monto.toLocaleString()}
+                        </p>
+                        <p className="text-xs capitalize text-muted-foreground">
+                          {pago.metodo}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-primary">
-                        ${pago.monto.toLocaleString()}
-                      </p>
-                      <p className="text-xs capitalize text-muted-foreground">
-                        {pago.metodo}
-                      </p>
-                    </div>
+                    {esAdministrativa && (
+                      <div className="mt-2 flex justify-end border-t border-border/40 pt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1.5 px-2 text-xs text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                          onClick={() =>
+                            setCorreccionDescripcion(
+                              `Correccion en pago de ${alumno.nombre} - ${pago.concepto} (${pago.mes_correspondiente}, $${pago.monto.toLocaleString()}): `
+                            )
+                          }
+                        >
+                          <MessageSquareWarning className="h-3.5 w-3.5" />
+                          Solicitar correccion
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -337,6 +361,13 @@ export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
         onClose={() => setShowSeguimientoModal(false)}
         alumno={alumno}
         onSuccess={fetchSeguimientos}
+      />
+
+      <SolicitarCorreccionModal
+        isOpen={correccionDescripcion !== null}
+        onClose={() => setCorreccionDescripcion(null)}
+        modulo="cursos"
+        defaultDescripcion={correccionDescripcion ?? ''}
       />
     </>
   )

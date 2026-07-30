@@ -19,6 +19,7 @@ import { AlumnoPanel } from './alumno-panel'
 interface CursosClientProps {
   cursos: Curso[]
   alumnos: Alumno[]
+  rol: string | null
 }
 
 const TABS: { id: TabCurso; label: string }[] = [
@@ -28,7 +29,7 @@ const TABS: { id: TabCurso; label: string }[] = [
   { id: 'bajas', label: 'Bajas' },
 ]
 
-export function CursosClient({ cursos, alumnos }: CursosClientProps) {
+export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
   const [activeTab, setActiveTab] = useState<TabCurso>('todos')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCurso, setSelectedCurso] = useState<string>('all')
@@ -235,6 +236,7 @@ export function CursosClient({ cursos, alumnos }: CursosClientProps) {
         <AlumnoPanel
           alumno={alumnos.find(a => a.id === selectedAlumnoId)!}
           cursos={cursos}
+          rol={rol}
           onClose={() => setSelectedAlumnoId(null)}
         />
       )}
