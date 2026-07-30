@@ -43,7 +43,8 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
   // Solicitud de correccion (solo rol administrativa). Guarda el texto pre-poblado del pago.
   const [correccionDescripcion, setCorreccionDescripcion] = useState<string | null>(null)
 
-  const esAdministrativa = rol === 'administrativa'
+  // La admin (Maria) puede editar directamente; el resto solicita correcciones.
+  const puedeSolicitarCorreccion = rol !== 'admin'
   const necesitaSeguimiento = alumno.estado === 'atrasado' || alumno.estado === 'baja'
 
   const fetchPagos = async () => {
@@ -69,7 +70,7 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
 
   useEffect(() => {
     fetchPagos()
-    if (necesitaSeguimiento) fetchSeguimientos()
+    fetchSeguimientos()
   }, [alumno.id])
 
   const handleReincorporar = async () => {
@@ -218,15 +219,28 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
                 </Button>
               </>
             )}
-            {necesitaSeguimiento && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-primary/50 text-primary hover:bg-primary/10"
+              onClick={() => setShowSeguimientoModal(true)}
+            >
+              <PhoneCall className="mr-2 h-4 w-4" />
+              Seguimiento
+            </Button>
+            {puedeSolicitarCorreccion && (
               <Button
                 size="sm"
                 variant="outline"
-                className="border-primary/50 text-primary hover:bg-primary/10"
-                onClick={() => setShowSeguimientoModal(true)}
+                className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                onClick={() =>
+                  setCorreccionDescripcion(
+                    `Correccion sobre el alumno ${alumno.nombre}: `
+                  )
+                }
               >
-                <PhoneCall className="mr-2 h-4 w-4" />
-                Seguimiento
+                <MessageSquareWarning className="mr-2 h-4 w-4" />
+                Solicitar correccion
               </Button>
             )}
             {alumno.estado === 'baja' && alumno.tipo_baja === 'temporal' && (
@@ -277,23 +291,6 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
                         </p>
                       </div>
                     </div>
-                    {esAdministrativa && (
-                      <div className="mt-2 flex justify-end border-t border-border/40 pt-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 gap-1.5 px-2 text-xs text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
-                          onClick={() =>
-                            setCorreccionDescripcion(
-                              `Correccion en pago de ${alumno.nombre} - ${pago.concepto} (${pago.mes_correspondiente}, $${pago.monto.toLocaleString()}): `
-                            )
-                          }
-                        >
-                          <MessageSquareWarning className="h-3.5 w-3.5" />
-                          Solicitar correccion
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -301,7 +298,7 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
           </div>
 
           {/* Follow-up History */}
-          {necesitaSeguimiento && (
+          {seguimientos.length > 0 && (
             <div>
               <h3 className="mb-3 font-medium text-foreground">Historial de seguimiento</h3>
               {seguimientos.length === 0 ? (
