@@ -1,18 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, CreditCard, Edit2, UserMinus, RotateCcw, Loader2 } from 'lucide-react'
+import { X, CreditCard, Edit2, UserMinus, RotateCcw, Loader2, PhoneCall } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Alumno, PagoCurso, Curso } from '@/types/cursos'
+import {
+  Alumno,
+  PagoCurso,
+  Curso,
+  Seguimiento,
+  tipoSeguimientoConfig,
+  resultadoSeguimientoConfig,
+} from '@/types/cursos'
 import { AlumnoModal } from './alumno-modal'
 import { PagoModal } from './pago-modal'
 import { BajaModal } from './baja-modal'
+import { SeguimientoModal } from './seguimiento-modal'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { getPagosCurso, reincorporarAlumno } from '@/lib/actions'
+import { getPagosCurso, reincorporarAlumno, getSeguimientos } from '@/lib/actions'
 
 interface AlumnoPanelProps {
   alumno: Alumno
@@ -27,7 +35,11 @@ export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showPagoModal, setShowPagoModal] = useState(false)
   const [showBajaModal, setShowBajaModal] = useState(false)
+  const [showSeguimientoModal, setShowSeguimientoModal] = useState(false)
+  const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([])
   const [reincorporando, setReincorporando] = useState(false)
+
+  const necesitaSeguimiento = alumno.estado === 'atrasado' || alumno.estado === 'baja'
 
   const fetchPagos = async () => {
     setLoading(true)
@@ -41,8 +53,18 @@ export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
     }
   }
 
+  const fetchSeguimientos = async () => {
+    try {
+      const data = await getSeguimientos(alumno.id)
+      setSeguimientos((data as Seguimiento[]) || [])
+    } catch (err) {
+      console.error('[v0] Error cargando seguimientos:', err)
+    }
+  }
+
   useEffect(() => {
     fetchPagos()
+    if (necesitaSeguimiento) fetchSeguimientos()
   }, [alumno.id])
 
   const handleReincorporar = async () => {
@@ -191,6 +213,17 @@ export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
                 </Button>
               </>
             )}
+            {necesitaSeguimiento && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-primary/50 text-primary hover:bg-primary/10"
+                onClick={() => setShowSeguimientoModal(true)}
+              >
+                <PhoneCall className="mr-2 h-4 w-4" />
+                Seguimiento
+              </Button>
+            )}
             {alumno.estado === 'baja' && alumno.tipo_baja === 'temporal' && (
               <Button
                 size="sm"
@@ -242,6 +275,39 @@ export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
               </div>
             )}
           </div>
+
+          {/* Follow-up History */}
+          {necesitaSeguimiento && (
+            <div>
+              <h3 className="mb-3 font-medium text-foreground">Historial de seguimiento</h3>
+              {seguimientos.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay seguimientos registrados</p>
+              ) : (
+                <div className="space-y-2">
+                  {seguimientos.map((s) => (
+                    <div key={s.id} className="rounded-lg bg-muted/30 p-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-foreground">
+                          {tipoSeguimientoConfig[s.tipo]?.label ?? s.tipo}
+                          {' \u00b7 '}
+                          <span className="text-muted-foreground">
+                            {resultadoSeguimientoConfig[s.resultado]?.label ?? s.resultado}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(s.fecha), 'dd/MM/yyyy')}
+                        </p>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Por: {s.quien}</p>
+                      {s.notas && (
+                        <p className="mt-1 text-sm text-foreground">{s.notas}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -264,6 +330,13 @@ export function AlumnoPanel({ alumno, cursos, onClose }: AlumnoPanelProps) {
         onClose={() => setShowBajaModal(false)}
         alumno={alumno}
         onSuccess={onClose}
+      />
+
+      <SeguimientoModal
+        isOpen={showSeguimientoModal}
+        onClose={() => setShowSeguimientoModal(false)}
+        alumno={alumno}
+        onSuccess={fetchSeguimientos}
       />
     </>
   )

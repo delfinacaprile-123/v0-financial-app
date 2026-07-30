@@ -133,6 +133,40 @@ export async function getAllPagosCursos() {
   return data
 }
 
+// ---- Seguimiento de alumnos (llamados, mensajes, visitas) ----
+export async function getSeguimientos(alumno_id: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('seguimiento_alumnos')
+    .select('*')
+    .eq('alumno_id', alumno_id)
+    .order('fecha', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function createSeguimiento(formData: {
+  alumno_id: string
+  tipo: string
+  resultado: string
+  quien: string
+  fecha: string
+  notas?: string
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await supabase.from('seguimiento_alumnos').insert({
+    ...formData,
+    registrado_por: user?.id,
+  })
+
+  if (error) throw error
+  revalidatePath('/cursos')
+}
+
 // ============ AGENCIA ============
 
 // Resuelve el id de la unidad de negocio 'Agencia' de forma determinista.

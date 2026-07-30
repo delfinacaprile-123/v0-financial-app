@@ -36,4 +36,34 @@ export interface PagoCurso {
   created_at: string
 }
 
+export type TipoSeguimiento = 'llamado' | 'mensaje' | 'visita' | 'otro'
+export type ResultadoSeguimiento = 'no_contesta' | 'promete_volver' | 'no_vuelve' | 'vuelve' | 'otro'
+
+export interface Seguimiento {
+  id: string
+  alumno_id: string
+  tipo: TipoSeguimiento
+  resultado: ResultadoSeguimiento
+  notas: string | null
+  quien: string
+  fecha: string
+  registrado_por: string | null
+  created_at: string
+}
+
+export const tipoSeguimientoConfig: Record<TipoSeguimiento, { label: string }> = {
+  llamado: { label: 'Llamado' },
+  mensaje: { label: 'Mensaje' },
+  visita: { label: 'Visita' },
+  otro: { label: 'Otro' },
+}
+
+export const resultadoSeguimientoConfig: Record<ResultadoSeguimiento, { label: string }> = {
+  no_contesta: { label: 'No contesta' },
+  promete_volver: { label: 'Promete volver' },
+  no_vuelve: { label: 'No vuelve' },
+  vuelve: { label: 'Vuelve' },
+  otro: { label: 'Otro' },
+}
+
 export type TabCurso = 'todos' | 'activos' | 'atrasados' | 'bajas'
