@@ -617,10 +617,12 @@ export function DashboardClient({
   caja,
   alertas,
   solicitudes = [],
+  esAdmin = false,
 }: {
   caja: CajaSaldos
   alertas: Alert[]
   solicitudes?: SolicitudCorreccion[]
+  esAdmin?: boolean
 }) {
   const [period, setPeriod] = useState('6m')
   const [compareMode, setCompareMode] = useState(false)
@@ -708,8 +710,8 @@ export function DashboardClient({
         />
       </div>
 
-      {/* Solicitudes de correccion (solo visibles para la admin) */}
-      {solicitudes.length > 0 && <SolicitudesPanel solicitudes={solicitudes} />}
+      {/* Solicitudes de correccion (seccion dedicada, solo visible para la admin) */}
+      {esAdmin && <SolicitudesPanel solicitudes={solicitudes} />}
 
       {/* Bottom Panels - 2x2 Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

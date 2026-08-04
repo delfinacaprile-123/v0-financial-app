@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardShell } from '@/components/dashboard-shell'
+import { getSolicitudesPendientesCount } from '@/lib/actions'
 
 export default async function DashboardLayout({
   children,
@@ -37,10 +38,15 @@ export default async function DashboardLayout({
     created_at: new Date().toISOString(),
   }
 
+  // Solo la admin (Maria) ve el badge de solicitudes de correccion pendientes
+  const solicitudesCount =
+    usuario?.rol === 'admin' ? await getSolicitudesPendientesCount() : 0
+
   return (
     <DashboardShell 
       user={usuario || defaultUsuario} 
       atrasadosCount={atrasadosCount || 0}
+      solicitudesCount={solicitudesCount}
     >
       {children}
     </DashboardShell>

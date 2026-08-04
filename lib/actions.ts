@@ -808,14 +808,46 @@ export async function getSolicitudesPendientes() {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('solicitudes_correccion')
-    .select('*, usuarios(nombre)')
+    .select('*')
     .eq('estado', 'pendiente')
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data
+
+  const solicitudes = data ?? []
+  if (solicitudes.length === 0) return []
+
+  // Resolvemos los nombres de quien registro cada solicitud con una query aparte
+  // (evita depender del embed de PostgREST, que puede fallar por RLS o ambiguedad).
+  const ids = Array.from(
+    new Set(solicitudes.map((s: any) => s.registrado_por).filter(Boolean))
+  )
+  const nombreById = new Map<string, string>()
+  if (ids.length > 0) {
+    const { data: usuarios } = await supabase
+      .from('usuarios')
+      .select('id, nombre')
+      .in('id', ids)
+    for (const u of usuarios ?? []) nombreById.set(u.id, u.nombre)
+  }
+
+  return solicitudes.map((s: any) => ({
+    ...s,
+    solicitante: s.registrado_por ? nombreById.get(s.registrado_por) ?? 'Administrativa' : 'Administrativa',
+  }))
 }
 
+// Conteo de solicitudes pendientes (para el badge del sidebar).
+export async function getSolicitudesPendientesCount(): Promise<number> {
+  const supabase = await createClient()
+  const { count } = await supabase
+    .from('solicitudes_correccion')
+    .select('*', { count: 'exact', head: true })
+    .eq('estado', 'pendiente')
+  return count ?? 0
+}
+
+// Aprobar o rechazar: en ambos casos la solicitud pasa a 'resuelta'.
 export async function resolverSolicitudCorreccion(id: string) {
   const supabase = await createClient()
   const { error } = await supabase

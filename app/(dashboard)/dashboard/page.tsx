@@ -45,7 +45,8 @@ export default async function DashboardPage() {
     id: s.id,
     descripcion: s.descripcion,
     modulo: s.modulo,
-    solicitante: s.usuarios?.nombre ?? 'Administrativa',
+    referencia: s.referencia ?? null,
+    solicitante: s.solicitante ?? 'Administrativa',
     created_at: s.created_at,
   }))
 
@@ -54,6 +55,7 @@ export default async function DashboardPage() {
       caja={{ secretaria: saldoSecretaria, mama: saldoMama }}
       alertas={alertas}
       solicitudes={solicitudesCorreccion}
+      esAdmin={rol === 'admin'}
     />
   )
 }
