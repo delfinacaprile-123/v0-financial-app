@@ -19,13 +19,14 @@ interface SidebarProps {
   user: Usuario
   onLogout: () => void
   atrasadosCount?: number
+  solicitudesCount?: number
 }
 
 const navItems = [
   {
     section: 'General',
     items: [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: '#C9A96E' },
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: '#C9A96E', badgeKey: 'solicitudes' },
     ]
   },
   {
@@ -51,7 +52,7 @@ const navItems = [
   },
 ]
 
-export function Sidebar({ user, onLogout, atrasadosCount = 0 }: SidebarProps) {
+export function Sidebar({ user, onLogout, atrasadosCount = 0, solicitudesCount = 0 }: SidebarProps) {
   const pathname = usePathname()
   
   const isActive = (href: string) => {
@@ -61,6 +62,7 @@ export function Sidebar({ user, onLogout, atrasadosCount = 0 }: SidebarProps) {
 
   const getBadgeCount = (badgeKey?: string) => {
     if (badgeKey === 'cursos') return atrasadosCount
+    if (badgeKey === 'solicitudes') return solicitudesCount
     return 0
   }
 
