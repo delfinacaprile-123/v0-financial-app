@@ -28,6 +28,7 @@ export default async function DashboardPage() {
 
   // Solo la admin (Maria) ve y resuelve las solicitudes de correccion
   const solicitudes = rol === 'admin' ? await getSolicitudesPendientes() : []
+  console.log('[v0] dashboard rol:', rol, '| esAdmin:', rol === 'admin', '| solicitudes:', solicitudes.length)
 
   const movimientos = (rows ?? []).map(mapRowToMovimiento)
   const { saldoSecretaria, saldoMama } = calcularSaldos(movimientos)
