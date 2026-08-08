@@ -129,6 +129,16 @@ const formatCompactMoney = (amount: number) => {
   return `$${(amount / 1000).toFixed(0)}K`
 }
 
+// Mes actual calculado en tiempo real (ej: "Agosto 2026")
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+const CURRENT_PERIOD_LABEL = capitalize(
+  new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
+)
+// Clave para buscar en MOCK_DATA (ej: "agosto-2026")
+const CURRENT_PERIOD_KEY = `${new Date()
+  .toLocaleDateString('es-AR', { month: 'long' })
+  .toLowerCase()}-${new Date().getFullYear()}`
+
 // Components
 function PeriodSelector({ 
   selected, 
@@ -283,7 +293,7 @@ function TotalCard({
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-[#888888] text-sm mb-2">Ingreso total · Abril 2026</p>
+            <p className="text-[#888888] text-sm mb-2">Ingreso total · {CURRENT_PERIOD_LABEL}</p>
             <p 
               className="font-serif text-5xl text-[#E8E8E8] transition-all duration-700"
               style={{ 
@@ -629,7 +639,8 @@ export function DashboardClient({
   const [comparePeriod1, setComparePeriod1] = useState('abril-2026')
   const [comparePeriod2, setComparePeriod2] = useState('marzo-2026')
 
-  const currentData = MOCK_DATA['abril-2026']
+  // Usa la data del mes actual si existe; si no, cae al ultimo mes disponible.
+  const currentData = MOCK_DATA[CURRENT_PERIOD_KEY] || MOCK_DATA['abril-2026']
   const previousData = MOCK_DATA['marzo-2026']
 
   const handlePeriodSelect = (p: string) => {
@@ -643,7 +654,7 @@ export function DashboardClient({
       <div className="flex items-start justify-between">
         <div>
           <h1 className="font-serif text-4xl text-[#E8E8E8]">Resumen general</h1>
-          <p className="text-[#888888] mt-1">Abril 2026</p>
+          <p className="text-[#888888] mt-1">{CURRENT_PERIOD_LABEL}</p>
         </div>
         <div>
           <PeriodSelector 
