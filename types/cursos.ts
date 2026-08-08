@@ -66,4 +66,4 @@ export const resultadoSeguimientoConfig: Record<ResultadoSeguimiento, { label: s
   otro: { label: 'Otro' },
 }
 
-export type TabCurso = 'todos' | 'activos' | 'atrasados' | 'bajas'
+export type TabCurso = 'todos' | 'activos' | 'atrasados' | 'bajas' | 'resumen'
