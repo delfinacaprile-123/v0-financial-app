@@ -1,5 +1,6 @@
 import { PageHeader } from '@/components/page-header'
 import { ConfiguracionClient } from '@/components/configuracion/configuracion-client'
+import { getRolActual } from '@/lib/actions'
 import type { UsuarioConfig, CursoConfig, ClienteConfig } from '@/types/configuracion'
 
 // Mock data for usuarios
@@ -148,15 +149,15 @@ const mockClientes: ClienteConfig[] = [
   },
 ]
 
-export default function ConfiguracionPage() {
-  // Note: In production, this would check the actual user role from Supabase
-  // For now, we use mock data and assume admin role
-  
+export default async function ConfiguracionPage() {
+  const rol = await getRolActual()
+  const esAdmin = rol === 'admin'
+
   return (
     <div>
       <PageHeader 
         title="Configuracion" 
-        description="Gestion de usuarios, cursos y clientes"
+        description={esAdmin ? 'Gestion de usuarios, cursos y clientes' : 'Gestion de cursos'}
         color="#C9A96E"
       />
       
@@ -164,6 +165,7 @@ export default function ConfiguracionPage() {
         usuarios={mockUsuarios}
         cursos={mockCursos}
         clientes={mockClientes}
+        esAdmin={esAdmin}
       />
     </div>
   )

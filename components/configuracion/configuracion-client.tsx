@@ -35,6 +35,7 @@ interface ConfiguracionClientProps {
   usuarios: UsuarioConfig[]
   cursos: CursoConfig[]
   clientes: ClienteConfig[]
+  esAdmin?: boolean
 }
 
 type TabType = 'usuarios' | 'cursos' | 'clientes'
@@ -42,9 +43,11 @@ type TabType = 'usuarios' | 'cursos' | 'clientes'
 export function ConfiguracionClient({ 
   usuarios: initialUsuarios, 
   cursos: initialCursos, 
-  clientes: initialClientes 
+  clientes: initialClientes,
+  esAdmin = false,
 }: ConfiguracionClientProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('usuarios')
+  // La administrativa (Eugenia) solo accede a Cursos; el resto es solo admin.
+  const [activeTab, setActiveTab] = useState<TabType>(esAdmin ? 'usuarios' : 'cursos')
   const [searchTerm, setSearchTerm] = useState('')
   const [unidadFilter, setUnidadFilter] = useState<'todos' | 'agencia' | 'social_tv'>('todos')
   

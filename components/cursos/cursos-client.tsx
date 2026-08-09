@@ -15,6 +15,7 @@ import {
 import { Curso, Alumno, TabCurso } from '@/types/cursos'
 import { AlumnoModal } from './alumno-modal'
 import { AlumnoPanel } from './alumno-panel'
+import { ResumenCursos } from './resumen-cursos'
 
 interface CursosClientProps {
   cursos: Curso[]
@@ -27,6 +28,7 @@ const TABS: { id: TabCurso; label: string }[] = [
   { id: 'activos', label: 'Activos' },
   { id: 'atrasados', label: 'Atrasados' },
   { id: 'bajas', label: 'Bajas' },
+  { id: 'resumen', label: 'Resumen por curso' },
 ]
 
 export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
@@ -117,15 +119,21 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
           ))}
         </div>
 
-        <Button
-          onClick={() => setShowNewAlumnoModal(true)}
-          className="bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nuevo alumno
-        </Button>
+        {activeTab !== 'resumen' && (
+          <Button
+            onClick={() => setShowNewAlumnoModal(true)}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo alumno
+          </Button>
+        )}
       </div>
 
+      {activeTab === 'resumen' ? (
+        <ResumenCursos cursos={cursos} alumnos={alumnos} />
+      ) : (
+        <>
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
@@ -224,6 +232,8 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
           </span>
         </span>
       </div>
+        </>
+      )}
 
       {/* Modals */}
       <AlumnoModal
