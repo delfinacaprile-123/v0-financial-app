@@ -71,11 +71,13 @@ export function ConfiguracionClient({
   const [deactivateCursoAlert, setDeactivateCursoAlert] = useState(false)
   const [cursoToDeactivate, setCursoToDeactivate] = useState<CursoConfig | null>(null)
 
-  const tabs: { id: TabType; label: string }[] = [
-    { id: 'usuarios', label: 'Usuarios' },
-    { id: 'cursos', label: 'Cursos' },
-    { id: 'clientes', label: 'Clientes' },
+  const allTabs: { id: TabType; label: string; adminOnly: boolean }[] = [
+    { id: 'usuarios', label: 'Usuarios', adminOnly: true },
+    { id: 'cursos', label: 'Cursos', adminOnly: false },
+    { id: 'clientes', label: 'Clientes', adminOnly: true },
   ]
+  // La administrativa (Eugenia) solo ve la pestana Cursos.
+  const tabs = allTabs.filter((tab) => esAdmin || !tab.adminOnly)
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -377,11 +379,14 @@ export function ConfiguracionClient({
                     <TableCell className="text-[#888888]">{curso.alumnos_activos}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Switch
-                          checked={curso.activo}
-                          onCheckedChange={() => handleToggleCursoActivo(curso)}
-                          className="data-[state=checked]:bg-[#22C55E] data-[state=unchecked]:bg-[#444444]"
-                        />
+                        {/* Solo admin puede activar/desactivar (eliminar) un curso */}
+                        {esAdmin && (
+                          <Switch
+                            checked={curso.activo}
+                            onCheckedChange={() => handleToggleCursoActivo(curso)}
+                            className="data-[state=checked]:bg-[#22C55E] data-[state=unchecked]:bg-[#444444]"
+                          />
+                        )}
                         <span className={curso.activo ? 'text-[#22C55E]' : 'text-[#666666]'}>
                           {curso.activo ? 'Activo' : 'Inactivo'}
                         </span>
