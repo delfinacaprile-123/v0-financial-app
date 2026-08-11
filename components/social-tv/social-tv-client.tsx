@@ -48,6 +48,8 @@ import { ClienteModal } from './cliente-modal'
 import { ConfirmarPagoModal } from './confirmar-pago-modal'
 import { PagoExtraordinarioModal } from './pago-extraordinario-modal'
 import { ClientePanel } from './cliente-panel'
+import { SolicitarCorreccionModal } from '@/components/solicitar-correccion-modal'
+import { MessageSquareWarning } from 'lucide-react'
 import { 
   ClienteTV, 
   ClienteTVConPago,
@@ -66,12 +68,14 @@ interface SocialTVClientProps {
   clientesIniciales: ClienteTV[]
   pagosIniciales: PagoMensualTV[]
   pagosExtraordinariosIniciales: PagoExtraordinarioTV[]
+  esAdmin?: boolean
 }
 
 export function SocialTVClient({ 
   clientesIniciales, 
   pagosIniciales,
-  pagosExtraordinariosIniciales
+  pagosExtraordinariosIniciales,
+  esAdmin = false,
 }: SocialTVClientProps) {
   const router = useRouter()
   const [clientes, setClientes] = useState<ClienteTV[]>(clientesIniciales)
@@ -92,6 +96,8 @@ export function SocialTVClient({
   const [clientePago, setClientePago] = useState<ClienteTVConPago | null>(null)
   const [pagoExtraModalOpen, setPagoExtraModalOpen] = useState(false)
   const [pagoExtraEdit, setPagoExtraEdit] = useState<PagoExtraordinarioTV | null>(null)
+  // Solicitud de correccion (para administrativa, que no puede editar/eliminar pagos)
+  const [correccionState, setCorreccionState] = useState<{ descripcion: string; referencia: string } | null>(null)
   
   // Panel lateral
   const [selectedCliente, setSelectedCliente] = useState<ClienteTV | null>(null)
@@ -604,22 +610,42 @@ export function SocialTVClient({
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => { setPagoExtraEdit(pago); setPagoExtraModalOpen(true) }}
-                            className="text-[#888888] hover:text-[#B09EC9]"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeletePagoExtra(pago.id)}
-                            className="text-[#888888] hover:text-red-400"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {esAdmin ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => { setPagoExtraEdit(pago); setPagoExtraModalOpen(true) }}
+                                className="text-[#888888] hover:text-[#B09EC9]"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeletePagoExtra(pago.id)}
+                                className="text-[#888888] hover:text-red-400"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const nombre = pago.cliente_nombre || clientes.find(c => c.id === pago.cliente_id)?.nombre || 'cliente'
+                                setCorreccionState({
+                                  referencia: nombre,
+                                  descripcion: `Correccion en pago extraordinario de ${nombre} (${formatARS(pago.monto)} - ${pago.descripcion}): `,
+                                })
+                              }}
+                              className="gap-1.5 text-xs text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                            >
+                              <MessageSquareWarning className="h-3.5 w-3.5" />
+                              Solicitar correccion
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -756,9 +782,18 @@ export function SocialTVClient({
             setSelectedCliente(null)
           }}
           onDesactivar={handleDesactivarCliente}
-          isAdmin={true}
+          isAdmin={esAdmin}
         />
       )}
+
+      {/* Solicitud de correccion (para administrativa) */}
+      <SolicitarCorreccionModal
+        isOpen={correccionState !== null}
+        onClose={() => setCorreccionState(null)}
+        modulo="social_tv"
+        referencia={correccionState?.referencia}
+        defaultDescripcion={correccionState?.descripcion ?? ''}
+      />
     </div>
   )
 }

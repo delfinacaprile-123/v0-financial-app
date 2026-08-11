@@ -1,6 +1,7 @@
 import { PageHeader } from '@/components/page-header'
 import { SocialTVClient } from '@/components/social-tv/social-tv-client'
 import { createClient } from '@/lib/supabase/server'
+import { getRolActual } from '@/lib/actions'
 import type {
   ClienteTV,
   PagoMensualTV,
@@ -27,6 +28,8 @@ function normalizeMes(mes: string | null, anio: number): string {
 
 export default async function SocialTVPage() {
   const supabase = await createClient()
+  const rol = await getRolActual()
+  const esAdmin = rol === 'admin'
 
   // La unidad puede llamarse 'Social TV' o 'social_tv': normalizamos para encontrarla
   const { data: unidades } = await supabase.from('unidades_negocio').select('id, nombre')
@@ -118,6 +121,7 @@ export default async function SocialTVPage() {
         clientesIniciales={clientes}
         pagosIniciales={pagos}
         pagosExtraordinariosIniciales={pagosExtra}
+        esAdmin={esAdmin}
       />
     </div>
   )
