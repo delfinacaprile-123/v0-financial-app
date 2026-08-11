@@ -23,6 +23,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { MovimientoModal } from './movimiento-modal'
 import { toast } from 'sonner'
 import type { Movimiento, TipoMovimiento, PersonaCaja, SaldoPersona, ResumenMensual } from '@/types/caja'
+import { CATEGORIA_LABELS } from '@/types/caja'
 
 interface CajaClientProps {
   initialMovimientos: Movimiento[]
@@ -44,6 +45,7 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
   const [activeTab, setActiveTab] = useState('movimientos')
   const [filtroTipo, setFiltroTipo] = useState<string>('todos')
   const [filtroPersona, setFiltroPersona] = useState<string>('todos')
+  const [filtroCategoria, setFiltroCategoria] = useState<string>('todos')
   const [mesSeleccionado, setMesSeleccionado] = useState(new Date().getMonth())
   const [anioSeleccionado, setAnioSeleccionado] = useState(new Date().getFullYear())
   const [modalOpen, setModalOpen] = useState(false)
@@ -92,6 +94,7 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
         const fecha = parseISO(mov.fecha)
         if (!isWithinInterval(fecha, { start: inicio, end: fin })) return false
         if (filtroTipo !== 'todos' && mov.tipo !== filtroTipo) return false
+        if (filtroCategoria !== 'todos' && (mov.categoria ?? '') !== filtroCategoria) return false
         if (filtroPersona !== 'todos') {
           if (mov.tipo === 'transferencia') {
             if (mov.de !== filtroPersona && mov.para !== filtroPersona) return false
@@ -102,7 +105,7 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
         return true
       })
       .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-  }, [movimientos, filtroTipo, filtroPersona, mesSeleccionado, anioSeleccionado])
+  }, [movimientos, filtroTipo, filtroPersona, filtroCategoria, mesSeleccionado, anioSeleccionado])
 
   // Movimientos por persona para detalle
   const movimientosPersona = useMemo(() => {
@@ -204,6 +207,7 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
       de: data.de,
       para: data.para,
       descripcion: data.descripcion,
+      categoria: data.categoria ?? null,
       fecha: data.fecha,
     }
 
@@ -420,6 +424,20 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
               </SelectContent>
             </Select>
 
+            <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+              <SelectTrigger className="w-[170px] bg-[#1A1A1A] border-[#2A2A2A] text-[#E5E5E5]">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1A1A1A] border-[#2A2A2A]">
+                <SelectItem value="todos" className="text-[#E5E5E5]">Todas las categorias</SelectItem>
+                {(Object.keys(CATEGORIA_LABELS) as (keyof typeof CATEGORIA_LABELS)[]).map((key) => (
+                  <SelectItem key={key} value={key} className="text-[#E5E5E5]">
+                    {CATEGORIA_LABELS[key]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <div className="flex-1" />
 
             <Button 
@@ -465,8 +483,18 @@ export function CajaClient({ initialMovimientos }: CajaClientProps) {
                         {format(parseISO(mov.fecha), 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell>{getTipoBadge(mov.tipo)}</TableCell>
-                      <TableCell className="text-[#E5E5E5] max-w-[250px] truncate">
-                        {mov.descripcion}
+                      <TableCell className="text-[#E5E5E5] max-w-[250px]">
+                        <div className="flex flex-col gap-1">
+                          <span className="truncate">{mov.descripcion}</span>
+                          {mov.categoria && CATEGORIA_LABELS[mov.categoria] && (
+                            <Badge
+                              variant="outline"
+                              className="w-fit border-[#7EC99A]/40 text-[#7EC99A] text-xs"
+                            >
+                              {CATEGORIA_LABELS[mov.categoria]}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatMonto(mov.monto, mov.tipo)}

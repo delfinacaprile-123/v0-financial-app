@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import type { Movimiento, TipoMovimiento, PersonaCaja } from '@/types/caja'
+import type { Movimiento, TipoMovimiento, PersonaCaja, CategoriaMovimiento } from '@/types/caja'
+import { CATEGORIA_LABELS } from '@/types/caja'
 
 interface MovimientoModalProps {
   open: boolean
@@ -33,6 +34,7 @@ export function MovimientoModal({
   const [monto, setMonto] = useState('')
   const [enPoderDe, setEnPoderDe] = useState<PersonaCaja>('secretaria')
   const [de, setDe] = useState<PersonaCaja>('secretaria')
+  const [categoria, setCategoria] = useState<CategoriaMovimiento | 'ninguna'>('ninguna')
   const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -43,6 +45,7 @@ export function MovimientoModal({
       setMonto(movimiento.monto.toString())
       setEnPoderDe(movimiento.enPoderDe)
       setDe(movimiento.de || 'secretaria')
+      setCategoria(movimiento.categoria ?? 'ninguna')
       setFecha(movimiento.fecha)
     } else {
       setTipo('ingreso')
@@ -50,6 +53,7 @@ export function MovimientoModal({
       setMonto('')
       setEnPoderDe('secretaria')
       setDe('secretaria')
+      setCategoria('ninguna')
       setFecha(format(new Date(), 'yyyy-MM-dd'))
     }
   }, [movimiento, open])
@@ -106,6 +110,7 @@ export function MovimientoModal({
           : descripcion,
         monto: parseFloat(monto),
         enPoderDe: tipo === 'transferencia' ? para : enPoderDe,
+        categoria: tipo !== 'transferencia' && categoria !== 'ninguna' ? categoria : null,
         de: tipo === 'transferencia' ? de : undefined,
         para: tipo === 'transferencia' ? para : undefined,
         registradoPor: 'Admin'
@@ -239,6 +244,25 @@ export function MovimientoModal({
               }
             />
           </div>
+
+          {tipo !== 'transferencia' && (
+            <div className="space-y-2">
+              <Label className="text-[#888888]">Categoria (opcional)</Label>
+              <Select value={categoria} onValueChange={(v) => setCategoria(v as CategoriaMovimiento | 'ninguna')}>
+                <SelectTrigger className="bg-[#1A1A1A] border-[#2A2A2A] text-[#E5E5E5]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1A1A1A] border-[#2A2A2A]">
+                  <SelectItem value="ninguna" className="text-[#E5E5E5]">Sin categoria</SelectItem>
+                  {(Object.keys(CATEGORIA_LABELS) as CategoriaMovimiento[]).map((key) => (
+                    <SelectItem key={key} value={key} className="text-[#E5E5E5]">
+                      {CATEGORIA_LABELS[key]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label className="text-[#888888]">Fecha</Label>

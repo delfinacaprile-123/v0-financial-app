@@ -1,6 +1,12 @@
 export type TipoMovimiento = 'ingreso' | 'egreso' | 'transferencia'
 export type PersonaCaja = 'secretaria' | 'mama'
 
+// Categorias/etiquetas opcionales para clasificar y filtrar movimientos
+export type CategoriaMovimiento = 'pago_profesores'
+export const CATEGORIA_LABELS: Record<CategoriaMovimiento, string> = {
+  pago_profesores: 'Pago profesores',
+}
+
 export interface Movimiento {
   id: string
   fecha: string
@@ -8,6 +14,8 @@ export interface Movimiento {
   descripcion: string
   monto: number
   enPoderDe: PersonaCaja
+  // Etiqueta opcional (ej: "Pago profesores")
+  categoria?: CategoriaMovimiento | null
   // Para transferencias
   de?: PersonaCaja
   para?: PersonaCaja

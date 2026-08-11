@@ -40,6 +40,7 @@ export function mapRowToMovimiento(row: any): Movimiento {
     descripcion: row.descripcion ?? '',
     monto: Number(row.monto),
     enPoderDe,
+    categoria: row.categoria ?? null,
     de,
     para,
     registradoPor: row.usuarios?.nombre ?? 'Admin',

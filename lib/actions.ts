@@ -488,6 +488,50 @@ export async function deletePagoSocialTV(id: string) {
   revalidatePath('/social-tv')
 }
 
+// ============ GASTOS SOCIAL TV ============
+
+export async function getGastosSocialTV() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('gastos_social_tv')
+    .select('*')
+    .order('fecha', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export interface GastoSocialTVInput {
+  categoria: 'notas' | 'viaticos' | 'produccion' | 'grabacion_pisos'
+  descripcion?: string
+  monto: number
+  fecha: string // yyyy-MM-dd
+}
+
+export async function createGastoSocialTV(input: GastoSocialTVInput) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const d = new Date(input.fecha)
+
+  const { error } = await supabase.from('gastos_social_tv').insert({
+    categoria: input.categoria,
+    descripcion: input.descripcion ?? null,
+    monto: input.monto,
+    fecha: input.fecha,
+    mes: d.getUTCMonth() + 1,
+    anio: d.getUTCFullYear(),
+    registrado_por: user?.id ?? null,
+  })
+  if (error) throw error
+  revalidatePath('/social-tv')
+}
+
+export async function deleteGastoSocialTV(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('gastos_social_tv').delete().eq('id', id)
+  if (error) throw error
+  revalidatePath('/social-tv')
+}
+
 // Forma del cliente de Social TV (UI) que mapeamos al esquema real de `clientes`
 export interface ClienteTVInput {
   nombre: string
@@ -578,6 +622,7 @@ export interface MovimientoInput {
   de?: 'secretaria' | 'mama'
   para?: 'secretaria' | 'mama'
   descripcion?: string
+  categoria?: string | null
   fecha: string
 }
 
@@ -606,6 +651,7 @@ function mapMovimientoToRow(input: MovimientoInput) {
     monto: input.monto,
     en_poder_de: normalizePersona(personaCruda),
     descripcion: input.descripcion ?? null,
+    categoria: isTransfer ? null : (input.categoria ?? null),
     fecha: input.fecha,
   }
 }

@@ -50,6 +50,8 @@ import { PagoExtraordinarioModal } from './pago-extraordinario-modal'
 import { ClientePanel } from './cliente-panel'
 import { SolicitarCorreccionModal } from '@/components/solicitar-correccion-modal'
 import { MessageSquareWarning } from 'lucide-react'
+import { GastosSocialTV } from './gastos-social-tv'
+import type { GastoSocialTV } from '@/types/social-tv'
 import { 
   ClienteTV, 
   ClienteTVConPago,
@@ -68,6 +70,7 @@ interface SocialTVClientProps {
   clientesIniciales: ClienteTV[]
   pagosIniciales: PagoMensualTV[]
   pagosExtraordinariosIniciales: PagoExtraordinarioTV[]
+  gastosIniciales?: GastoSocialTV[]
   esAdmin?: boolean
 }
 
@@ -75,6 +78,7 @@ export function SocialTVClient({
   clientesIniciales, 
   pagosIniciales,
   pagosExtraordinariosIniciales,
+  gastosIniciales = [],
   esAdmin = false,
 }: SocialTVClientProps) {
   const router = useRouter()
@@ -363,8 +367,17 @@ export function SocialTVClient({
           >
             Por tipo de servicio
           </TabsTrigger>
+          <TabsTrigger 
+            value="gastos" 
+            className="data-[state=active]:bg-[#B09EC9] data-[state=active]:text-[#0A0A0A]"
+          >
+            Gastos
+          </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {/* VISTA: Gastos */}
+      {activeTab === 'gastos' && <GastosSocialTV gastosIniciales={gastosIniciales} />}
 
       {/* VISTA 1: Checklist mensual */}
       {activeTab === 'checklist' && (

@@ -39,6 +39,26 @@ export interface ClienteTVConPago extends ClienteTV {
   pago_actual?: PagoMensualTV
 }
 
+export type CategoriaGastoTV = 'notas' | 'viaticos' | 'produccion' | 'grabacion_pisos'
+
+export interface GastoSocialTV {
+  id: string
+  categoria: CategoriaGastoTV
+  descripcion?: string | null
+  monto: number
+  fecha: string
+  mes: number
+  anio: number
+  created_at?: string
+}
+
+export const categoriaGastoTVConfig: Record<CategoriaGastoTV, { label: string; color: string }> = {
+  notas: { label: 'Notas', color: '#22D3EE' },
+  viaticos: { label: 'Viáticos', color: '#A3E635' },
+  produccion: { label: 'Producción', color: '#F97316' },
+  grabacion_pisos: { label: 'Grabación de pisos', color: '#E879F9' },
+}
+
 export interface ResumenTipoServicioTV {
   tipo: TipoServicioTV
   total_ingresado: number
