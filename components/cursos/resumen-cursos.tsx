@@ -19,6 +19,17 @@ interface ResumenCurso {
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
+// Parsea una fecha de Supabase (tipo date: "YYYY-MM-DD") como fecha LOCAL.
+// Usar new Date("2026-01-01") la interpreta en UTC y, en zonas negativas como
+// Argentina (UTC-3), retrocede al mes anterior. Aca fijamos ano/mes/dia locales.
+function parseFechaLocal(valor: string | null | undefined): Date | null {
+  if (!valor) return null
+  const soloFecha = String(valor).slice(0, 10)
+  const [anio, mes, dia] = soloFecha.split('-').map(Number)
+  if (!anio || !mes || !dia) return null
+  return new Date(anio, mes - 1, dia)
+}
+
 // Cantidad de meses transcurridos desde la fecha de inicio (inclusive) = numero de cuota actual.
 // Ej: inicio enero 2026, hoy agosto 2026 => cuota nº 8.
 function calcularCuota(fechaInicio: Date | null): number {
@@ -39,10 +50,8 @@ export function ResumenCursos({ cursos, alumnos }: ResumenCursosProps) {
 
         // Fecha de inicio = inscripcion mas antigua del curso
         const fechas = alumnosCurso
-          .map((a) => a.fecha_inscripcion)
-          .filter(Boolean)
-          .map((f) => new Date(f))
-          .filter((d) => !isNaN(d.getTime()))
+          .map((a) => parseFechaLocal(a.fecha_inscripcion))
+          .filter((d): d is Date => d !== null && !isNaN(d.getTime()))
         const fechaInicio =
           fechas.length > 0
             ? new Date(Math.min(...fechas.map((d) => d.getTime())))
