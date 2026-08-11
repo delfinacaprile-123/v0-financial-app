@@ -47,7 +47,7 @@ const navItems = [
   {
     section: 'Sistema',
     items: [
-      { name: 'Configuracion', href: '/configuracion', icon: Settings, color: '#C9A96E', adminOnly: true },
+      { name: 'Configuracion', href: '/configuracion', icon: Settings, color: '#C9A96E' },
     ]
   },
 ]
