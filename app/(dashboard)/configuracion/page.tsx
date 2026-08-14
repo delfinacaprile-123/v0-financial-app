@@ -1,7 +1,9 @@
 import { PageHeader } from '@/components/page-header'
 import { ConfiguracionClient } from '@/components/configuracion/configuracion-client'
-import { getRolActual } from '@/lib/actions'
+import { getRolActual, getCursos, getAlumnos } from '@/lib/actions'
 import type { UsuarioConfig, CursoConfig, ClienteConfig } from '@/types/configuracion'
+
+export const dynamic = 'force-dynamic'
 
 // Mock data for usuarios
 const mockUsuarios: UsuarioConfig[] = [
@@ -25,38 +27,6 @@ const mockUsuarios: UsuarioConfig[] = [
     email: 'laura@nativamodels.com',
     rol: 'administrativa',
     created_at: '2024-06-15T00:00:00Z',
-  },
-]
-
-// Mock data for cursos
-const mockCursos: CursoConfig[] = [
-  {
-    id: '1',
-    nombre: 'Modelaje Profesional',
-    precio_mensual: 85000,
-    activo: true,
-    alumnos_activos: 18,
-  },
-  {
-    id: '2',
-    nombre: 'Pasarela Avanzada',
-    precio_mensual: 85000,
-    activo: true,
-    alumnos_activos: 12,
-  },
-  {
-    id: '3',
-    nombre: 'Fotografia y Poses',
-    precio_mensual: 85000,
-    activo: true,
-    alumnos_activos: 8,
-  },
-  {
-    id: '4',
-    nombre: 'Imagen Personal',
-    precio_mensual: 85000,
-    activo: true,
-    alumnos_activos: 4,
   },
 ]
 
@@ -150,8 +120,27 @@ const mockClientes: ClienteConfig[] = [
 ]
 
 export default async function ConfiguracionPage() {
-  const rol = await getRolActual()
+  const [rol, cursosRaw, alumnosRaw] = await Promise.all([
+    getRolActual(),
+    getCursos(),
+    getAlumnos(),
+  ])
   const esAdmin = rol === 'admin'
+
+  // Cuenta de alumnos activos (no dados de baja) por curso
+  const activosPorCurso = new Map<string, number>()
+  for (const a of alumnosRaw ?? []) {
+    if ((a.estado ?? 'activo') === 'baja') continue
+    activosPorCurso.set(a.curso_id, (activosPorCurso.get(a.curso_id) ?? 0) + 1)
+  }
+
+  const cursos: CursoConfig[] = (cursosRaw ?? []).map((c: any) => ({
+    id: c.id,
+    nombre: c.nombre,
+    precio_mensual: Number(c.precio_mensual) || 0,
+    activo: c.activo ?? true,
+    alumnos_activos: activosPorCurso.get(c.id) ?? 0,
+  }))
 
   return (
     <div>
@@ -163,7 +152,7 @@ export default async function ConfiguracionPage() {
       
       <ConfiguracionClient 
         usuarios={mockUsuarios}
-        cursos={mockCursos}
+        cursos={cursos}
         clientes={mockClientes}
         esAdmin={esAdmin}
       />

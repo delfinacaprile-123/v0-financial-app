@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +31,7 @@ import { UsuarioModal } from './usuario-modal'
 import { CursoModal } from './curso-modal'
 import { ClienteModal } from './cliente-modal'
 import type { UsuarioConfig, CursoConfig, ClienteConfig } from '@/types/configuracion'
+import { createCurso, updateCurso } from '@/lib/actions'
 
 interface ConfiguracionClientProps {
   usuarios: UsuarioConfig[]
@@ -46,6 +48,7 @@ export function ConfiguracionClient({
   clientes: initialClientes,
   esAdmin = false,
 }: ConfiguracionClientProps) {
+  const router = useRouter()
   // La administrativa (Eugenia) solo accede a Cursos; el resto es solo admin.
   const [activeTab, setActiveTab] = useState<TabType>(esAdmin ? 'usuarios' : 'cursos')
   const [searchTerm, setSearchTerm] = useState('')
@@ -55,6 +58,11 @@ export function ConfiguracionClient({
   const [usuarios, setUsuarios] = useState(initialUsuarios)
   const [cursos, setCursos] = useState(initialCursos)
   const [clientes, setClientes] = useState(initialClientes)
+
+  // Mantiene la lista de cursos en sync con los datos del servidor tras router.refresh()
+  useEffect(() => {
+    setCursos(initialCursos)
+  }, [initialCursos])
   
   // Modal state
   const [usuarioModalOpen, setUsuarioModalOpen] = useState(false)
@@ -136,20 +144,44 @@ export function ConfiguracionClient({
     setCursoModalOpen(true)
   }
 
-  const handleSaveCurso = (data: Partial<CursoConfig>) => {
-    if (selectedCurso) {
-      setCursos(cursos.map(c => 
-        c.id === selectedCurso.id ? { ...c, ...data } : c
-      ))
-    } else {
-      const newCurso: CursoConfig = {
-        id: `curso-${Date.now()}`,
-        nombre: data.nombre || '',
-        precio_mensual: data.precio_mensual || 0,
-        activo: data.activo ?? true,
-        alumnos_activos: 0,
+  const handleSaveCurso = async (data: Partial<CursoConfig>) => {
+    try {
+      if (selectedCurso) {
+        await updateCurso(selectedCurso.id, {
+          nombre: data.nombre,
+          precio_mensual: data.precio_mensual,
+          activo: data.activo,
+        })
+        setCursos(cursos.map(c =>
+          c.id === selectedCurso.id ? { ...c, ...data } : c
+        ))
+        toast.success('Curso actualizado')
+      } else {
+        await createCurso({
+          nombre: data.nombre || '',
+          precio_mensual: data.precio_mensual || 0,
+          activo: data.activo ?? true,
+        })
+        toast.success('Curso creado')
+        // El revalidatePath del server action refresca la lista con el id real
+        router.refresh()
       }
-      setCursos([...cursos, newCurso])
+    } catch (error) {
+      console.error('[v0] Error al guardar curso:', error)
+      toast.error('No se pudo guardar el curso')
+    }
+  }
+
+  const persistToggleCurso = async (curso: CursoConfig, nuevoActivo: boolean) => {
+    try {
+      await updateCurso(curso.id, { activo: nuevoActivo })
+      setCursos(cursos.map(c =>
+        c.id === curso.id ? { ...c, activo: nuevoActivo } : c
+      ))
+      toast.success(nuevoActivo ? 'Curso activado' : 'Curso desactivado')
+    } catch (error) {
+      console.error('[v0] Error al cambiar estado del curso:', error)
+      toast.error('No se pudo cambiar el estado del curso')
     }
   }
 
@@ -158,19 +190,13 @@ export function ConfiguracionClient({
       setCursoToDeactivate(curso)
       setDeactivateCursoAlert(true)
     } else {
-      setCursos(cursos.map(c => 
-        c.id === curso.id ? { ...c, activo: !c.activo } : c
-      ))
-      toast.success(curso.activo ? 'Curso desactivado' : 'Curso activado')
+      persistToggleCurso(curso, !curso.activo)
     }
   }
 
   const confirmDeactivateCurso = () => {
     if (cursoToDeactivate) {
-      setCursos(cursos.map(c => 
-        c.id === cursoToDeactivate.id ? { ...c, activo: false } : c
-      ))
-      toast.success('Curso desactivado')
+      persistToggleCurso(cursoToDeactivate, false)
     }
     setDeactivateCursoAlert(false)
     setCursoToDeactivate(null)
