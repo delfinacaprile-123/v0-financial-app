@@ -627,11 +627,13 @@ export function DashboardClient({
   caja,
   alertas,
   solicitudes = [],
+  ingresos,
   esAdmin = false,
 }: {
   caja: CajaSaldos
   alertas: Alert[]
   solicitudes?: SolicitudCorreccion[]
+  ingresos?: PeriodData
   esAdmin?: boolean
 }) {
   const [period, setPeriod] = useState('6m')
@@ -639,8 +641,8 @@ export function DashboardClient({
   const [comparePeriod1, setComparePeriod1] = useState('abril-2026')
   const [comparePeriod2, setComparePeriod2] = useState('marzo-2026')
 
-  // Usa la data del mes actual si existe; si no, cae al ultimo mes disponible.
-  const currentData = MOCK_DATA[CURRENT_PERIOD_KEY] || MOCK_DATA['abril-2026']
+  // Ingresos reales del periodo actual desde Supabase; fallback a mock si no llegan.
+  const currentData = ingresos ?? MOCK_DATA[CURRENT_PERIOD_KEY] ?? MOCK_DATA['abril-2026']
   const previousData = MOCK_DATA['marzo-2026']
 
   const handlePeriodSelect = (p: string) => {

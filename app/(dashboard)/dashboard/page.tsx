@@ -4,6 +4,7 @@ import {
   getClientesTVSinPago,
   getRolActual,
   getSolicitudesPendientes,
+  getDashboardStats,
 } from '@/lib/actions'
 import { mapRowToMovimiento, calcularSaldos } from '@/lib/caja-utils'
 
@@ -20,16 +21,24 @@ export default async function DashboardPage() {
   const anioActual = now.getFullYear()
   const nombreMes = MESES_ES[now.getMonth()]
 
-  const [rows, clientesSinPago, rol] = await Promise.all([
+  const [rows, clientesSinPago, rol, stats] = await Promise.all([
     getMovimientosCaja(),
     getClientesTVSinPago(mesActual, anioActual),
     getRolActual(),
+    getDashboardStats(),
   ])
+
+  // Ingresos reales del periodo actual (Cursos / Agencia / Social TV)
+  const ingresos = {
+    total: stats.totalGeneral,
+    cursos: { monto: stats.cursos.total, cantidad: stats.cursos.alumnos },
+    agencia: { monto: stats.agencia.total, cantidad: stats.agencia.trabajos },
+    socialTv: { monto: stats.socialTV.total, cantidad: stats.socialTV.clientes },
+  }
 
   // TEMPORAL: mostramos las solicitudes a todos los usuarios autenticados
   // para verificar el componente. Luego se restringe con: rol === 'admin'.
   const solicitudes = await getSolicitudesPendientes()
-  console.log('[v0] dashboard rol:', rol, '| solicitudes:', solicitudes.length)
 
   const movimientos = (rows ?? []).map(mapRowToMovimiento)
   const { saldoSecretaria, saldoMama } = calcularSaldos(movimientos)
@@ -57,6 +66,7 @@ export default async function DashboardPage() {
       caja={{ secretaria: saldoSecretaria, mama: saldoMama }}
       alertas={alertas}
       solicitudes={solicitudesCorreccion}
+      ingresos={ingresos}
       esAdmin={true}
     />
   )
