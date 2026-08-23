@@ -582,7 +582,7 @@ function CajaPanel({ caja }: { caja: CajaSaldos }) {
 }
 
 function ProductosPanel({ productos }: { productos: ProductoIngreso[] }) {
-  const maxMonto = Math.max(...productos.map(p => p.monto))
+  const maxMonto = Math.max(...productos.map(p => p.monto), 1)
 
   return (
     <Card className="bg-[#111111] border-[rgba(201,169,110,0.15)]">
@@ -628,12 +628,14 @@ export function DashboardClient({
   alertas,
   solicitudes = [],
   ingresos,
+  productos,
   esAdmin = false,
 }: {
   caja: CajaSaldos
   alertas: Alert[]
   solicitudes?: SolicitudCorreccion[]
   ingresos?: PeriodData
+  productos?: ProductoIngreso[]
   esAdmin?: boolean
 }) {
   const [period, setPeriod] = useState('6m')
@@ -731,7 +733,7 @@ export function DashboardClient({
         <AlertsPanel alerts={alertas} />
         <EvolutionPanel data={EVOLUTION_DATA} period={period} />
         <CajaPanel caja={caja} />
-        <ProductosPanel productos={PRODUCTOS} />
+        <ProductosPanel productos={productos ?? PRODUCTOS} />
       </div>
     </div>
   )

@@ -937,14 +937,18 @@ export async function getDashboardStats() {
   ] = await Promise.all([
     supabase.from('alumnos').select('*', { count: 'exact', head: true }).eq('estado', 'activo'),
     supabase.from('pagos_cursos').select('monto').gte('created_at', `${currentMonth}-01`),
-    supabase.from('trabajos').select('monto_cobrado, estado').gte('fecha', `${currentMonth}-01`),
+    supabase.from('trabajos').select('monto_cobrado, estado, tipo').gte('fecha', `${currentMonth}-01`),
     supabase.from('pagos_social_tv').select('*, clientes(monto_mensual)').eq('mes', currentMonth.split('-')[1]).eq('anio', currentYear),
     supabase.from('caja').select('tipo, monto, en_poder_de')
   ])
   
   const totalCursos = pagosCursos?.reduce((sum, p) => sum + Number(p.monto), 0) || 0
-  const totalAgencia = trabajos?.filter(t => t.estado === 'pagado').reduce((sum, t) => sum + Number(t.monto_cobrado), 0) || 0
+  const totalAgencia = trabajos?.reduce((sum, t) => sum + Number(t.monto_cobrado || 0), 0) || 0
   const totalSocialTV = pagosSocialTV?.filter(p => p.pagado).reduce((sum, p) => sum + Number(p.clientes?.monto_mensual || 0) + Number(p.monto_extra || 0), 0) || 0
+
+  // Desglose de ingresos de agencia por tipo de trabajo (del periodo)
+  const agenciaPorTipo = (tipo: string) =>
+    trabajos?.filter(t => t.tipo === tipo).reduce((sum, t) => sum + Number(t.monto_cobrado || 0), 0) || 0
   
   // Calculate caja balances
   const saldos = { secretaria: 0, mama: 0 }
@@ -962,7 +966,16 @@ export async function getDashboardStats() {
     cursos: { total: totalCursos, alumnos: alumnosActivos || 0 },
     agencia: { total: totalAgencia, trabajos: trabajos?.length || 0 },
     socialTV: { total: totalSocialTV, clientes: pagosSocialTV?.length || 0 },
-    caja: { secretaria: saldos.secretaria, mama: saldos.mama, total: saldos.secretaria + saldos.mama }
+    caja: { secretaria: saldos.secretaria, mama: saldos.mama, total: saldos.secretaria + saldos.mama },
+    // Ingresos por producto del periodo (para el panel del dashboard)
+    productos: {
+      cuotasCursos: totalCursos,
+      producciones: agenciaPorTipo('produccion'),
+      desfiles: agenciaPorTipo('desfile'),
+      promos: agenciaPorTipo('promo'),
+      fotos: agenciaPorTipo('foto'),
+      socialTV: totalSocialTV,
+    },
   }
 }
 

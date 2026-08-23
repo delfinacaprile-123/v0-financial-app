@@ -36,6 +36,16 @@ export default async function DashboardPage() {
     socialTv: { monto: stats.socialTV.total, cantidad: stats.socialTV.clientes },
   }
 
+  // Ingresos por producto del periodo (datos reales de Supabase)
+  const productos = [
+    { nombre: 'Cuotas cursos', monto: stats.productos.cuotasCursos, color: '#C9A96E', unidad: 'cursos' as const },
+    { nombre: 'Producciones', monto: stats.productos.producciones, color: '#8FB3C9', unidad: 'agencia' as const },
+    { nombre: 'Desfiles', monto: stats.productos.desfiles, color: '#8FB3C9', unidad: 'agencia' as const },
+    { nombre: 'Social TV cuotas', monto: stats.productos.socialTV, color: '#B09EC9', unidad: 'social-tv' as const },
+    { nombre: 'Promos', monto: stats.productos.promos, color: '#8FB3C9', unidad: 'agencia' as const },
+    { nombre: 'Fotos', monto: stats.productos.fotos, color: '#8FB3C9', unidad: 'agencia' as const },
+  ]
+
   // TEMPORAL: mostramos las solicitudes a todos los usuarios autenticados
   // para verificar el componente. Luego se restringe con: rol === 'admin'.
   const solicitudes = await getSolicitudesPendientes()
@@ -67,6 +77,7 @@ export default async function DashboardPage() {
       alertas={alertas}
       solicitudes={solicitudesCorreccion}
       ingresos={ingresos}
+      productos={productos}
       esAdmin={true}
     />
   )
