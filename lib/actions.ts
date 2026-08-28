@@ -925,9 +925,16 @@ export async function getRolActual(): Promise<string | null> {
 export async function getDashboardStats() {
   const supabase = await createClient()
   
-  const currentMonth = new Date().toISOString().slice(0, 7)
-  const currentYear = new Date().getFullYear()
-  
+  const now = new Date()
+  const currentMonth = now.toISOString().slice(0, 7)
+  const currentYear = now.getFullYear()
+
+  // Primer y ultimo dia del mes actual (para acotar los pagos del periodo)
+  const primerDiaMes = `${currentMonth}-01`
+  const ultimoDiaMes = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    .toISOString()
+    .slice(0, 10)
+
   const [
     { count: alumnosActivos },
     { data: pagosCursos },
@@ -936,7 +943,7 @@ export async function getDashboardStats() {
     { data: movimientosCaja }
   ] = await Promise.all([
     supabase.from('alumnos').select('*', { count: 'exact', head: true }).eq('estado', 'activo'),
-    supabase.from('pagos_cursos').select('monto').gte('created_at', `${currentMonth}-01`),
+    supabase.from('pagos_cursos').select('monto').gte('fecha_pago', primerDiaMes).lte('fecha_pago', ultimoDiaMes),
     supabase.from('trabajos').select('monto_cobrado, estado, tipo').gte('fecha', `${currentMonth}-01`),
     supabase.from('pagos_social_tv').select('*, clientes(monto_mensual)').eq('mes', currentMonth.split('-')[1]).eq('anio', currentYear),
     supabase.from('caja').select('tipo, monto, en_poder_de')

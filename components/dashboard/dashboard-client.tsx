@@ -200,12 +200,26 @@ function CompareSelector({
   onPeriod1Change: (p: string) => void
   onPeriod2Change: (p: string) => void
 }) {
-  const periods = [
-    { value: 'abril-2026', label: 'Abril 2026' },
-    { value: 'marzo-2026', label: 'Marzo 2026' },
-    { value: 'febrero-2026', label: 'Febrero 2026' },
-    { value: 'enero-2026', label: 'Enero 2026' }
+  // Genera los periodos desde enero 2025 hasta el mes actual (mas reciente primero)
+  const MESES = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
   ]
+  const periods: { value: string; label: string }[] = []
+  const hoy = new Date()
+  for (let anio = hoy.getFullYear(), mes = hoy.getMonth(); anio > 2024 || (anio === 2025 && mes >= 0); ) {
+    const nombre = MESES[mes]
+    periods.push({
+      value: `${nombre}-${anio}`,
+      label: `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${anio}`,
+    })
+    if (anio === 2025 && mes === 0) break
+    mes -= 1
+    if (mes < 0) {
+      mes = 11
+      anio -= 1
+    }
+  }
 
   return (
     <div className="flex items-center gap-4 mt-4">
