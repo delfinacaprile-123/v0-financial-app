@@ -643,6 +643,7 @@ export function DashboardClient({
   solicitudes = [],
   ingresos,
   productos,
+  evolucion,
   esAdmin = false,
 }: {
   caja: CajaSaldos
@@ -650,6 +651,7 @@ export function DashboardClient({
   solicitudes?: SolicitudCorreccion[]
   ingresos?: PeriodData
   productos?: ProductoIngreso[]
+  evolucion?: EvolutionData[]
   esAdmin?: boolean
 }) {
   const [period, setPeriod] = useState('6m')

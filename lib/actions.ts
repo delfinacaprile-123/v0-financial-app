@@ -986,6 +986,66 @@ export async function getDashboardStats() {
   }
 }
 
+// Evolucion mensual real de ingresos: ventana movil que termina en el mes actual.
+// Devuelve un item por mes (mas antiguo primero) con cursos/agencia/socialTv.
+export async function getEvolucionMensual(cantidadMeses = 12) {
+  const supabase = await createClient()
+  const MESES_ABBR = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+  const hoy = new Date()
+  // Primer dia de la ventana: (mes actual - (cantidadMeses - 1))
+  const inicioVentana = new Date(hoy.getFullYear(), hoy.getMonth() - (cantidadMeses - 1), 1)
+  const inicioISO = `${inicioVentana.getFullYear()}-${String(inicioVentana.getMonth() + 1).padStart(2, '0')}-01`
+
+  const [{ data: pagosCursos }, { data: trabajos }, { data: pagosTV }] = await Promise.all([
+    supabase.from('pagos_cursos').select('monto, fecha_pago').gte('fecha_pago', inicioISO),
+    supabase.from('trabajos').select('monto_cobrado, fecha').gte('fecha', inicioISO),
+    supabase.from('pagos_social_tv').select('mes, anio, pagado, monto_extra, clientes(monto_mensual)').gte('anio', inicioVentana.getFullYear()),
+  ])
+
+  // Construye los buckets de la ventana en orden cronologico
+  const buckets: { key: string; label: string; cursos: number; agencia: number; socialTv: number }[] = []
+  const indicePorKey = new Map<string, number>()
+  for (let i = 0; i < cantidadMeses; i++) {
+    const d = new Date(inicioVentana.getFullYear(), inicioVentana.getMonth() + i, 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    indicePorKey.set(key, buckets.length)
+    buckets.push({
+      key,
+      label: `${MESES_ABBR[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
+      cursos: 0,
+      agencia: 0,
+      socialTv: 0,
+    })
+  }
+
+  const keyDeFecha = (fecha: string) => String(fecha).slice(0, 7) // 'YYYY-MM'
+
+  for (const p of pagosCursos ?? []) {
+    const idx = indicePorKey.get(keyDeFecha(p.fecha_pago))
+    if (idx !== undefined) buckets[idx].cursos += Number(p.monto || 0)
+  }
+
+  for (const t of trabajos ?? []) {
+    const idx = indicePorKey.get(keyDeFecha(t.fecha))
+    if (idx !== undefined) buckets[idx].agencia += Number(t.monto_cobrado || 0)
+  }
+
+  for (const p of pagosTV ?? []) {
+    if (!p.pagado) continue
+    // mes es text ('01'..'12'); anio es integer
+    const key = `${p.anio}-${String(p.mes).padStart(2, '0')}`
+    const idx = indicePorKey.get(key)
+    if (idx !== undefined) {
+      const cliente = p.clientes as { monto_mensual?: number } | { monto_mensual?: number }[] | null
+      const montoMensual = Array.isArray(cliente) ? Number(cliente[0]?.monto_mensual || 0) : Number(cliente?.monto_mensual || 0)
+      buckets[idx].socialTv += montoMensual + Number(p.monto_extra || 0)
+    }
+  }
+
+  return buckets.map(({ label, cursos, agencia, socialTv }) => ({ mes: label, cursos, agencia, socialTv }))
+}
+
 // ============ GASTOS ============
 
 export interface GastoInput {

@@ -5,6 +5,7 @@ import {
   getRolActual,
   getSolicitudesPendientes,
   getDashboardStats,
+  getEvolucionMensual,
 } from '@/lib/actions'
 import { mapRowToMovimiento, calcularSaldos } from '@/lib/caja-utils'
 
@@ -21,11 +22,12 @@ export default async function DashboardPage() {
   const anioActual = now.getFullYear()
   const nombreMes = MESES_ES[now.getMonth()]
 
-  const [rows, clientesSinPago, rol, stats] = await Promise.all([
+  const [rows, clientesSinPago, rol, stats, evolucion] = await Promise.all([
     getMovimientosCaja(),
     getClientesTVSinPago(mesActual, anioActual),
     getRolActual(),
     getDashboardStats(),
+    getEvolucionMensual(12),
   ])
 
   // Ingresos reales del periodo actual (Cursos / Agencia / Social TV)
@@ -78,6 +80,7 @@ export default async function DashboardPage() {
       solicitudes={solicitudesCorreccion}
       ingresos={ingresos}
       productos={productos}
+      evolucion={evolucion}
       esAdmin={true}
     />
   )
