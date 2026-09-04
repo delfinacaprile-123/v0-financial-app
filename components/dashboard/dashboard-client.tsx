@@ -488,7 +488,10 @@ function AlertsPanel({ alerts }: { alerts: Alert[] }) {
 }
 
 function EvolutionPanel({ data, period }: { data: EvolutionData[]; period: string }) {
-  const filteredData = period === '3m' ? data.slice(-3) : data
+  // data ya viene como ventana movil que termina en el mes actual (mas reciente al final).
+  // Tomamos los ultimos N meses segun el periodo elegido.
+  const meses = period === '3m' ? 3 : period === '6m' ? 6 : 12
+  const filteredData = data.slice(-meses)
 
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) => {
     if (active && payload && payload.length) {
