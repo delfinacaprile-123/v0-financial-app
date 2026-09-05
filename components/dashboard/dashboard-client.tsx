@@ -750,7 +750,7 @@ export function DashboardClient({
       {/* Bottom Panels - 2x2 Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <AlertsPanel alerts={alertas} />
-        <EvolutionPanel data={EVOLUTION_DATA} period={period} />
+        <EvolutionPanel data={evolucion ?? EVOLUTION_DATA} period={period} />
         <CajaPanel caja={caja} />
         <ProductosPanel productos={productos ?? PRODUCTOS} />
       </div>
