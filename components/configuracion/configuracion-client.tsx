@@ -32,6 +32,7 @@ import { CursoModal } from './curso-modal'
 import { ClienteModal } from './cliente-modal'
 import type { UsuarioConfig, CursoConfig, ClienteConfig } from '@/types/configuracion'
 import { createCurso, updateCurso } from '@/lib/actions'
+import { BackupSection } from '@/components/configuracion/backup-section'
 
 interface ConfiguracionClientProps {
   usuarios: UsuarioConfig[]
@@ -40,7 +41,7 @@ interface ConfiguracionClientProps {
   esAdmin?: boolean
 }
 
-type TabType = 'usuarios' | 'cursos' | 'clientes'
+type TabType = 'usuarios' | 'cursos' | 'clientes' | 'backup'
 
 export function ConfiguracionClient({ 
   usuarios: initialUsuarios, 
@@ -83,6 +84,7 @@ export function ConfiguracionClient({
     { id: 'usuarios', label: 'Usuarios', adminOnly: true },
     { id: 'cursos', label: 'Cursos', adminOnly: false },
     { id: 'clientes', label: 'Clientes', adminOnly: true },
+    { id: 'backup', label: 'Backup', adminOnly: true },
   ]
   // La administrativa (Eugenia) solo ve la pestana Cursos.
   const tabs = allTabs.filter((tab) => esAdmin || !tab.adminOnly)
@@ -537,6 +539,9 @@ export function ConfiguracionClient({
           </div>
         </div>
       )}
+
+      {/* Backup Tab (solo admin) */}
+      {activeTab === 'backup' && esAdmin && <BackupSection />}
 
       {/* Modals */}
       <UsuarioModal
