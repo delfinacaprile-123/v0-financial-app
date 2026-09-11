@@ -36,6 +36,14 @@ function mesCorrespondienteToIndex(value?: string | null): number | null {
   return anio * 12 + mes
 }
 
+// Convierte una fecha ISO ("2026-09-01") en el mismo índice comparable (anio * 12 + mes).
+function mesCorrespondienteFechaToIndex(value?: string | null): number | null {
+  if (!value) return null
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return null
+  return d.getFullYear() * 12 + d.getMonth()
+}
+
 export default async function CursosPage() {
   const [cursosRaw, alumnosRaw, pagosRaw, rol] = await Promise.all([
     getCursos(),
@@ -55,11 +63,11 @@ export default async function CursosPage() {
     if (prev === undefined || idx > prev) ultimoMesPagado.set(p.alumno_id, idx)
   }
 
-  // Mes actual como índice. Un alumno está "al día" si pagó el mes actual o el anterior
-  // (es decir, tiene pago dentro de los últimos 2 meses); si no, está "atrasado".
+  // Un alumno solo está "atrasado" si NO tiene cubierto el mes anterior (p. ej. agosto).
+  // El mes actual (septiembre) todavía no genera atraso: recién vence al cerrar el mes.
   const now = new Date()
   const mesActualIndex = now.getFullYear() * 12 + now.getMonth()
-  const umbralAlDia = mesActualIndex - 1
+  const mesAnteriorIndex = mesActualIndex - 1
 
   const alumnos: Alumno[] = (alumnosRaw ?? []).map((a: any) => {
     const estadoBase = a.estado ?? 'activo'
@@ -67,7 +75,13 @@ export default async function CursosPage() {
     let estado = estadoBase
     if (estadoBase !== 'baja') {
       const ultimo = ultimoMesPagado.get(a.id)
-      estado = ultimo !== undefined && ultimo >= umbralAlDia ? 'activo' : 'atrasado'
+      // Inscriptos en el mes actual sin pagos aún no están atrasados (su 1er mes no venció).
+      const inscripcionIndex = mesCorrespondienteFechaToIndex(a.fecha_inscripcion)
+      const reciénInscripto =
+        ultimo === undefined && inscripcionIndex !== null && inscripcionIndex >= mesActualIndex
+
+      const cubreMesAnterior = ultimo !== undefined && ultimo >= mesAnteriorIndex
+      estado = cubreMesAnterior || reciénInscripto ? 'activo' : 'atrasado'
     }
 
     return {
