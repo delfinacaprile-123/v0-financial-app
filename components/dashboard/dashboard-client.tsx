@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SolicitudesPanel, type SolicitudCorreccion } from './solicitudes-panel'
+import { BackupBanner } from './backup-banner'
 import {
   BarChart,
   Bar,
@@ -647,6 +648,7 @@ export function DashboardClient({
   ingresos,
   productos,
   evolucion,
+  mostrarBackupBanner = false,
   esAdmin = false,
 }: {
   caja: CajaSaldos
@@ -655,6 +657,7 @@ export function DashboardClient({
   ingresos?: PeriodData
   productos?: ProductoIngreso[]
   evolucion?: EvolutionData[]
+  mostrarBackupBanner?: boolean
   esAdmin?: boolean
 }) {
   const [period, setPeriod] = useState('6m')
@@ -673,6 +676,9 @@ export function DashboardClient({
 
   return (
     <div className="space-y-6">
+      {/* Recordatorio de backup (solo el 1ro del mes, para admin) */}
+      {mostrarBackupBanner && <BackupBanner />}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

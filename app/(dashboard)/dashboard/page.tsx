@@ -55,6 +55,10 @@ export default async function DashboardPage() {
   const movimientos = (rows ?? []).map(mapRowToMovimiento)
   const { saldoSecretaria, saldoMama } = calcularSaldos(movimientos)
 
+  // Recordatorio de backup: solo el 1ro de cada mes y solo para admin
+  const esAdmin = rol === 'admin'
+  const mostrarBackupBanner = now.getDate() === 1 && esAdmin
+
   // Alertas reales: clientes de Social TV activos sin pago del mes actual
   const alertas = (clientesSinPago ?? []).map((c: any) => ({
     id: `tv-${c.id}`,
@@ -81,6 +85,7 @@ export default async function DashboardPage() {
       ingresos={ingresos}
       productos={productos}
       evolucion={evolucion}
+      mostrarBackupBanner={mostrarBackupBanner}
       esAdmin={true}
     />
   )
