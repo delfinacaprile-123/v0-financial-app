@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/page-header'
 import { ClasesClient } from '@/components/clases/clases-client'
-import { getHorariosSabado, getMaterias } from '@/lib/actions-clases'
+import { getHorariosSabado, getMaterias } from '@/lib/actions'
 import type { HorarioSabado, Materia } from '@/types/clases'
 
 export const dynamic = 'force-dynamic'

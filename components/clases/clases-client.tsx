@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge'
 import { CalendarDays, Plus, Trash2, ArrowLeft, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { NuevoSabadoModal } from './nuevo-sabado-modal'
-import { deleteHorarioSabado } from '@/lib/actions-clases'
+import { deleteHorarioSabado } from '@/lib/actions'
 import { generarHorario, TURNOS } from '@/lib/clases-utils'
 import type { HorarioSabado, Materia } from '@/types/clases'
 

@@ -34,7 +34,7 @@ import { MateriaModal } from './materia-modal'
 import type { UsuarioConfig, CursoConfig, ClienteConfig } from '@/types/configuracion'
 import type { Materia } from '@/types/clases'
 import { createCurso, updateCurso } from '@/lib/actions'
-import { createMateria, updateMateria, deleteMateria } from '@/lib/actions-clases'
+import { createMateria, updateMateria, deleteMateria } from '@/lib/actions'
 import { BackupSection } from '@/components/configuracion/backup-section'
 
 interface ConfiguracionClientProps {

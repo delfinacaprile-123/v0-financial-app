@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { createHorarioSabado } from '@/lib/actions-clases'
+import { createHorarioSabado } from '@/lib/actions'
 import type { Materia } from '@/types/clases'
 
 interface NuevoSabadoModalProps {

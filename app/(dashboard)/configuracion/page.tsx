@@ -1,7 +1,6 @@
 import { PageHeader } from '@/components/page-header'
 import { ConfiguracionClient } from '@/components/configuracion/configuracion-client'
-import { getRolActual, getCursos, getAlumnos } from '@/lib/actions'
-import { getMaterias } from '@/lib/actions-clases'
+import { getRolActual, getCursos, getAlumnos, getMaterias } from '@/lib/actions'
 import type { UsuarioConfig, CursoConfig, ClienteConfig } from '@/types/configuracion'
 
 export const dynamic = 'force-dynamic'

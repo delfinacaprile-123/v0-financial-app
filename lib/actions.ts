@@ -1131,3 +1131,119 @@ export async function deleteGasto(id: string) {
   if (error) throw error
   revalidatePath('/gastos')
 }
+
+// ============ CLASES: MATERIAS (programa) ============
+
+export async function getMaterias() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('materias')
+    .select('*')
+    .order('numero_clase')
+
+  if (error) throw error
+  return data
+}
+
+export async function createMateria(formData: {
+  numero_clase: number
+  nombre: string
+  profe: string
+  salon: string
+}) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('materias').insert(formData)
+
+  if (error) throw error
+  revalidatePath('/configuracion')
+  revalidatePath('/clases')
+}
+
+export async function updateMateria(
+  id: string,
+  formData: {
+    numero_clase?: number
+    nombre?: string
+    profe?: string
+    salon?: string
+  }
+) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('materias').update(formData).eq('id', id)
+
+  if (error) throw error
+  revalidatePath('/configuracion')
+  revalidatePath('/clases')
+}
+
+export async function deleteMateria(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('materias').delete().eq('id', id)
+
+  if (error) throw error
+  revalidatePath('/configuracion')
+  revalidatePath('/clases')
+}
+
+// ============ CLASES: HORARIOS DE SABADO ============
+
+export async function getHorariosSabado() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('horarios_sabado')
+    .select('*, grupos_sabado(*)')
+    .order('fecha', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function createHorarioSabado(formData: {
+  fecha: string
+  grupos: { nombre_grupo: string; numero_clase_inicio: number }[]
+}) {
+  const supabase = await createClient()
+
+  const { data: horario, error: errorHorario } = await supabase
+    .from('horarios_sabado')
+    .insert({ fecha: formData.fecha })
+    .select()
+    .single()
+
+  if (errorHorario) throw errorHorario
+
+  if (formData.grupos.length > 0) {
+    const { error: errorGrupos } = await supabase.from('grupos_sabado').insert(
+      formData.grupos.map((g) => ({
+        horario_id: horario.id,
+        nombre_grupo: g.nombre_grupo,
+        numero_clase_inicio: g.numero_clase_inicio,
+      }))
+    )
+
+    if (errorGrupos) {
+      // Sin transacción en el cliente: revertimos el sábado para no dejarlo huérfano
+      await supabase.from('horarios_sabado').delete().eq('id', horario.id)
+      throw errorGrupos
+    }
+  }
+
+  revalidatePath('/clases')
+  return horario
+}
+
+export async function deleteHorarioSabado(id: string) {
+  const supabase = await createClient()
+  // La FK grupos_sabado.horario_id no tiene ON DELETE CASCADE: borrar los hijos primero
+  const { error: errorGrupos } = await supabase
+    .from('grupos_sabado')
+    .delete()
+    .eq('horario_id', id)
+
+  if (errorGrupos) throw errorGrupos
+
+  const { error } = await supabase.from('horarios_sabado').delete().eq('id', id)
+
+  if (error) throw error
+  revalidatePath('/clases')
+}
