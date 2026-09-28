@@ -25,28 +25,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Plus, Search, Pencil } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { UsuarioModal } from './usuario-modal'
 import { CursoModal } from './curso-modal'
 import { ClienteModal } from './cliente-modal'
+import { MateriaModal } from './materia-modal'
 import type { UsuarioConfig, CursoConfig, ClienteConfig } from '@/types/configuracion'
+import type { Materia } from '@/types/clases'
 import { createCurso, updateCurso } from '@/lib/actions'
+import { createMateria, updateMateria, deleteMateria } from '@/lib/actions-clases'
 import { BackupSection } from '@/components/configuracion/backup-section'
 
 interface ConfiguracionClientProps {
   usuarios: UsuarioConfig[]
   cursos: CursoConfig[]
   clientes: ClienteConfig[]
+  materias?: Materia[]
   esAdmin?: boolean
 }
 
-type TabType = 'usuarios' | 'cursos' | 'clientes' | 'backup'
+type TabType = 'usuarios' | 'cursos' | 'clientes' | 'clases' | 'backup'
 
 export function ConfiguracionClient({ 
   usuarios: initialUsuarios, 
   cursos: initialCursos, 
   clientes: initialClientes,
+  materias: initialMaterias = [],
   esAdmin = false,
 }: ConfiguracionClientProps) {
   const router = useRouter()
@@ -59,6 +64,12 @@ export function ConfiguracionClient({
   const [usuarios, setUsuarios] = useState(initialUsuarios)
   const [cursos, setCursos] = useState(initialCursos)
   const [clientes, setClientes] = useState(initialClientes)
+  const [materias, setMaterias] = useState(initialMaterias)
+
+  // Mantiene la lista de materias en sync con los datos del servidor tras router.refresh()
+  useEffect(() => {
+    setMaterias(initialMaterias)
+  }, [initialMaterias])
 
   // Mantiene la lista de cursos en sync con los datos del servidor tras router.refresh()
   useEffect(() => {
@@ -75,15 +86,23 @@ export function ConfiguracionClient({
   
   const [clienteModalOpen, setClienteModalOpen] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState<ClienteConfig | null>(null)
-  
+
+  const [materiaModalOpen, setMateriaModalOpen] = useState(false)
+  const [selectedMateria, setSelectedMateria] = useState<Materia | null>(null)
+
   // Alert dialog for deactivating curso
   const [deactivateCursoAlert, setDeactivateCursoAlert] = useState(false)
   const [cursoToDeactivate, setCursoToDeactivate] = useState<CursoConfig | null>(null)
+
+  // Alert dialog for deleting materia
+  const [deleteMateriaAlert, setDeleteMateriaAlert] = useState(false)
+  const [materiaToDelete, setMateriaToDelete] = useState<Materia | null>(null)
 
   const allTabs: { id: TabType; label: string; adminOnly: boolean }[] = [
     { id: 'usuarios', label: 'Usuarios', adminOnly: true },
     { id: 'cursos', label: 'Cursos', adminOnly: false },
     { id: 'clientes', label: 'Clientes', adminOnly: true },
+    { id: 'clases', label: 'Clases', adminOnly: true },
     { id: 'backup', label: 'Backup', adminOnly: true },
   ]
   // La administrativa (Eugenia) solo ve la pestana Cursos.
@@ -202,6 +221,55 @@ export function ConfiguracionClient({
     }
     setDeactivateCursoAlert(false)
     setCursoToDeactivate(null)
+  }
+
+  // Materia handlers (programa de Clases)
+  const handleNewMateria = () => {
+    setSelectedMateria(null)
+    setMateriaModalOpen(true)
+  }
+
+  const handleEditMateria = (materia: Materia) => {
+    setSelectedMateria(materia)
+    setMateriaModalOpen(true)
+  }
+
+  const handleSaveMateria = async (data: { numero_clase: number; nombre: string; profe: string; salon: string }) => {
+    try {
+      if (selectedMateria) {
+        await updateMateria(selectedMateria.id, data)
+        setMaterias(materias.map(m => (m.id === selectedMateria.id ? { ...m, ...data } : m)))
+        toast.success('Materia actualizada')
+      } else {
+        await createMateria(data)
+        toast.success('Materia creada')
+        // El revalidatePath del server action refresca la lista con el id real
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('[v0] Error al guardar materia:', error)
+      toast.error('No se pudo guardar la materia')
+    }
+  }
+
+  const handleDeleteMateria = (materia: Materia) => {
+    setMateriaToDelete(materia)
+    setDeleteMateriaAlert(true)
+  }
+
+  const confirmDeleteMateria = async () => {
+    if (materiaToDelete) {
+      try {
+        await deleteMateria(materiaToDelete.id)
+        setMaterias(materias.filter(m => m.id !== materiaToDelete.id))
+        toast.success('Materia eliminada')
+      } catch (error) {
+        console.error('[v0] Error al eliminar materia:', error)
+        toast.error('No se pudo eliminar la materia')
+      }
+    }
+    setDeleteMateriaAlert(false)
+    setMateriaToDelete(null)
   }
 
   // Cliente handlers
@@ -540,6 +608,78 @@ export function ConfiguracionClient({
         </div>
       )}
 
+      {/* Clases Tab: programa de materias (solo admin) */}
+      {activeTab === 'clases' && esAdmin && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-[#888888]">
+              Programa de materias usado para generar el horario de los sabados en Clases.
+            </p>
+            <Button
+              onClick={handleNewMateria}
+              className="bg-[#C9A96E] text-[#0A0A0A] hover:bg-[#B8986D]"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva materia
+            </Button>
+          </div>
+
+          <div className="bg-[#111111] border border-[rgba(201,169,110,0.15)] rounded-xl overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-[rgba(201,169,110,0.1)] hover:bg-transparent">
+                  <TableHead className="text-[#888888] w-20">N°</TableHead>
+                  <TableHead className="text-[#888888]">Materia</TableHead>
+                  <TableHead className="text-[#888888]">Profe</TableHead>
+                  <TableHead className="text-[#888888]">Salon</TableHead>
+                  <TableHead className="text-[#888888] text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...materias].sort((a, b) => a.numero_clase - b.numero_clase).map((materia) => (
+                  <TableRow
+                    key={materia.id}
+                    className="border-[rgba(201,169,110,0.1)] hover:bg-[rgba(201,169,110,0.05)]"
+                  >
+                    <TableCell className="text-[#888888]">{materia.numero_clase}</TableCell>
+                    <TableCell className="text-[#E5E5E5] font-medium">{materia.nombre}</TableCell>
+                    <TableCell className="text-[#E5E5E5]">{materia.profe}</TableCell>
+                    <TableCell className="text-[#E5E5E5]">{materia.salon}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditMateria(materia)}
+                          className="text-[#888888] hover:text-[#C9A96E] hover:bg-[rgba(201,169,110,0.1)]"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteMateria(materia)}
+                          className="text-[#888888] hover:text-[#EF4444] hover:bg-[rgba(239,68,68,0.1)]"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {materias.length === 0 && (
+                  <TableRow className="border-[rgba(201,169,110,0.1)] hover:bg-transparent">
+                    <TableCell colSpan={5} className="text-center text-[#666666] py-8">
+                      Todavia no hay materias en el programa.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      )}
+
       {/* Backup Tab (solo admin) */}
       {activeTab === 'backup' && esAdmin && <BackupSection />}
 
@@ -565,6 +705,36 @@ export function ConfiguracionClient({
         cliente={selectedCliente}
         onSave={handleSaveCliente}
       />
+
+      <MateriaModal
+        open={materiaModalOpen}
+        onOpenChange={setMateriaModalOpen}
+        materia={selectedMateria}
+        onSave={handleSaveMateria}
+      />
+
+      {/* Delete Materia Alert */}
+      <AlertDialog open={deleteMateriaAlert} onOpenChange={setDeleteMateriaAlert}>
+        <AlertDialogContent className="bg-[#111111] border-[rgba(201,169,110,0.2)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#E5E5E5]">Eliminar materia</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#888888]">
+              Se eliminara &quot;{materiaToDelete?.nombre}&quot; del programa. Esta accion no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[rgba(201,169,110,0.3)] text-[#888888] hover:bg-[rgba(201,169,110,0.1)]">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteMateria}
+              className="bg-[#EF4444] text-white hover:bg-[#DC2626]"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Deactivate Curso Alert */}
       <AlertDialog open={deactivateCursoAlert} onOpenChange={setDeactivateCursoAlert}>
