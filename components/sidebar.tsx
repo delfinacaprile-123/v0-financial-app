@@ -9,6 +9,7 @@ import {
   Tv, 
   Wallet, 
   Receipt,
+  CalendarDays,
   Settings,
   LogOut
 } from 'lucide-react'
@@ -35,6 +36,7 @@ const navItems = [
       { name: 'Cursos', href: '/cursos', icon: BookOpen, color: '#C9A96E', badgeKey: 'cursos' },
       { name: 'Agencia', href: '/agencia', icon: Briefcase, color: '#8FB3C9' },
       { name: 'Social TV', href: '/social-tv', icon: Tv, color: '#B09EC9' },
+      { name: 'Clases', href: '/clases', icon: CalendarDays, color: '#7FC9A0' },
     ]
   },
   {

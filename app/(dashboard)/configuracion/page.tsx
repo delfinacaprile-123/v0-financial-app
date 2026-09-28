@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/page-header'
 import { ConfiguracionClient } from '@/components/configuracion/configuracion-client'
-import { getRolActual, getCursos, getAlumnos } from '@/lib/actions'
+import { getRolActual, getCursos, getAlumnos, getMaterias } from '@/lib/actions'
 import type { UsuarioConfig, CursoConfig, ClienteConfig } from '@/types/configuracion'
 
 export const dynamic = 'force-dynamic'
@@ -120,10 +120,11 @@ const mockClientes: ClienteConfig[] = [
 ]
 
 export default async function ConfiguracionPage() {
-  const [rol, cursosRaw, alumnosRaw] = await Promise.all([
+  const [rol, cursosRaw, alumnosRaw, materias] = await Promise.all([
     getRolActual(),
     getCursos(),
     getAlumnos(),
+    getMaterias(),
   ])
   const esAdmin = rol === 'admin'
 
@@ -154,6 +155,7 @@ export default async function ConfiguracionPage() {
         usuarios={mockUsuarios}
         cursos={cursos}
         clientes={mockClientes}
+        materias={materias ?? []}
         esAdmin={esAdmin}
       />
     </div>

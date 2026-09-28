@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Curso, Alumno, TabCurso } from '@/types/cursos'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { AlumnoModal } from './alumno-modal'
 import { AlumnoPanel } from './alumno-panel'
 import { ResumenCursos } from './resumen-cursos'
@@ -72,6 +74,16 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
       default:
         return null
     }
+  }
+
+  const getBajaBadge = (fechaBaja?: string | null) => {
+    if (!fechaBaja) return null
+    const label = format(new Date(fechaBaja), 'MMMM yyyy', { locale: es })
+    return (
+      <Badge variant="outline" className="border-red-500/40 text-red-400">
+        Baja {label.charAt(0).toUpperCase() + label.slice(1)}
+      </Badge>
+    )
   }
 
   const getTipoBadge = (tipo: string, descuento?: number) => {
@@ -211,7 +223,10 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
                       ${calcularMonto(alumno).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      {getEstadoBadge(alumno.estado)}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {getEstadoBadge(alumno.estado)}
+                        {alumno.estado === 'baja' && getBajaBadge(alumno.fecha_baja)}
+                      </div>
                     </td>
                   </tr>
                 ))

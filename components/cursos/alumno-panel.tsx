@@ -110,6 +110,16 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
     }
   }
 
+  const getBajaBadge = (fechaBaja?: string | null) => {
+    if (!fechaBaja) return null
+    const label = format(new Date(fechaBaja), 'MMMM yyyy', { locale: es })
+    return (
+      <Badge variant="outline" className="border-red-500/40 text-red-400">
+        Baja {label.charAt(0).toUpperCase() + label.slice(1)}
+      </Badge>
+    )
+  }
+
   const getTipoBadge = (tipo: string) => {
     switch (tipo) {
       case 'beca':
@@ -139,6 +149,7 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               {getEstadoBadge(alumno.estado)}
+              {alumno.estado === 'baja' && getBajaBadge(alumno.fecha_baja)}
               {getTipoBadge(alumno.tipo)}
               {alumno.es_reincorporacion && (
                 <Badge variant="outline" className="border-purple-500/50 text-purple-400">
