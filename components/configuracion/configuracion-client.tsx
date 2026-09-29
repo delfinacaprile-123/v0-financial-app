@@ -102,7 +102,7 @@ export function ConfiguracionClient({
     { id: 'usuarios', label: 'Usuarios', adminOnly: true },
     { id: 'cursos', label: 'Cursos', adminOnly: false },
     { id: 'clientes', label: 'Clientes', adminOnly: true },
-    { id: 'clases', label: 'Clases', adminOnly: true },
+    { id: 'clases', label: 'Clases', adminOnly: false },
     { id: 'backup', label: 'Backup', adminOnly: true },
   ]
   // La administrativa (Eugenia) solo ve la pestana Cursos.
@@ -609,7 +609,7 @@ export function ConfiguracionClient({
       )}
 
       {/* Clases Tab: programa de materias (solo admin) */}
-      {activeTab === 'clases' && esAdmin && (
+      {activeTab === 'clases' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-[#888888]">
