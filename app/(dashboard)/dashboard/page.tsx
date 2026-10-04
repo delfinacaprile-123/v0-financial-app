@@ -48,8 +48,6 @@ export default async function DashboardPage() {
     { nombre: 'Fotos', monto: stats.productos.fotos, color: '#8FB3C9', unidad: 'agencia' as const },
   ]
 
-  // TEMPORAL: mostramos las solicitudes a todos los usuarios autenticados
-  // para verificar el componente. Luego se restringe con: rol === 'admin'.
   const solicitudes = await getSolicitudesPendientes()
 
   const movimientos = (rows ?? []).map(mapRowToMovimiento)
@@ -86,7 +84,7 @@ export default async function DashboardPage() {
       productos={productos}
       evolucion={evolucion}
       mostrarBackupBanner={mostrarBackupBanner}
-      esAdmin={true}
+      esAdmin={esAdmin}
     />
   )
 }
