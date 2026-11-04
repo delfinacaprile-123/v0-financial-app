@@ -131,7 +131,8 @@ export default async function ConfiguracionPage() {
   // Cuenta de alumnos activos (no dados de baja) por curso
   const activosPorCurso = new Map<string, number>()
   for (const a of alumnosRaw ?? []) {
-    if ((a.estado ?? 'activo') === 'baja') continue
+    const estadoAlumno = a.estado ?? 'activo'
+    if (estadoAlumno === 'baja' || estadoAlumno === 'finalizo') continue
     activosPorCurso.set(a.curso_id, (activosPorCurso.get(a.curso_id) ?? 0) + 1)
   }
 

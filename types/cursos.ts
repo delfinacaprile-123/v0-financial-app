@@ -13,11 +13,12 @@ export interface Alumno {
   descuento_pct: number
   monto_personalizado: number | null
   curso_id: string
-  estado: 'activo' | 'atrasado' | 'baja'
+  estado: 'activo' | 'atrasado' | 'baja' | 'finalizo'
   notas: string | null
   fecha_inscripcion: string
   es_reincorporacion: boolean
   fecha_baja: string | null
+  fecha_finalizacion: string | null
   tipo_baja: 'definitiva' | 'temporal' | null
   created_at: string
   // Joined data
@@ -66,4 +67,4 @@ export const resultadoSeguimientoConfig: Record<ResultadoSeguimiento, { label: s
   otro: { label: 'Otro' },
 }
 
-export type TabCurso = 'todos' | 'activos' | 'atrasados' | 'bajas' | 'resumen'
+export type TabCurso = 'todos' | 'activos' | 'atrasados' | 'bajas' | 'egresados' | 'resumen'

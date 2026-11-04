@@ -22,7 +22,7 @@ const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 // Parsea una fecha de Supabase (tipo date: "YYYY-MM-DD") como fecha LOCAL.
 // Usar new Date("2026-01-01") la interpreta en UTC y, en zonas negativas como
 // Argentina (UTC-3), retrocede al mes anterior. Aca fijamos ano/mes/dia locales.
-function parseFechaLocal(valor: string | null | undefined): Date | null {
+export function parseFechaLocal(valor: string | null | undefined): Date | null {
   if (!valor) return null
   const soloFecha = String(valor).slice(0, 10)
   const [anio, mes, dia] = soloFecha.split('-').map(Number)

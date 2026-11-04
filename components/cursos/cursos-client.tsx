@@ -17,7 +17,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { AlumnoModal } from './alumno-modal'
 import { AlumnoPanel } from './alumno-panel'
-import { ResumenCursos } from './resumen-cursos'
+import { ResumenCursos, parseFechaLocal } from './resumen-cursos'
 
 interface CursosClientProps {
   cursos: Curso[]
@@ -30,6 +30,7 @@ const TABS: { id: TabCurso; label: string }[] = [
   { id: 'activos', label: 'Activos' },
   { id: 'atrasados', label: 'Atrasados' },
   { id: 'bajas', label: 'Bajas' },
+  { id: 'egresados', label: 'Egresados' },
   { id: 'resumen', label: 'Resumen por curso' },
 ]
 
@@ -48,6 +49,7 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
       if (activeTab === 'activos' && alumno.estado !== 'activo') return false
       if (activeTab === 'atrasados' && alumno.estado !== 'atrasado') return false
       if (activeTab === 'bajas' && alumno.estado !== 'baja') return false
+      if (activeTab === 'egresados' && alumno.estado !== 'finalizo') return false
 
       // Filter by search
       if (searchQuery && !alumno.nombre.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -71,9 +73,21 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
         return <Badge className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30">Atrasado</Badge>
       case 'baja':
         return <Badge className="bg-red-500/20 text-red-400 hover:bg-red-500/30">Baja</Badge>
+      case 'finalizo':
+        return <Badge className="bg-sky-500/20 text-sky-400 hover:bg-sky-500/30">Egresado</Badge>
       default:
         return null
     }
+  }
+
+  const getFinalizoBadge = (fechaFinalizacion?: string | null) => {
+    const fecha = parseFechaLocal(fechaFinalizacion)
+    if (!fecha) return null
+    return (
+      <Badge variant="outline" className="border-sky-500/40 text-sky-400">
+        Finalizó {format(fecha, 'MMMM yyyy', { locale: es })}
+      </Badge>
+    )
   }
 
   const getBajaBadge = (fechaBaja?: string | null) => {
@@ -226,6 +240,7 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
                       <div className="flex flex-wrap items-center gap-1.5">
                         {getEstadoBadge(alumno.estado)}
                         {alumno.estado === 'baja' && getBajaBadge(alumno.fecha_baja)}
+                        {alumno.estado === 'finalizo' && getFinalizoBadge(alumno.fecha_finalizacion)}
                       </div>
                     </td>
                   </tr>
@@ -243,7 +258,11 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
         <span>
           Ingresos esperados:{' '}
           <span className="font-medium text-primary">
-            ${filteredAlumnos.reduce((sum, a) => sum + calcularMonto(a), 0).toLocaleString()}
+            $
+            {filteredAlumnos
+              .filter((a) => a.estado !== 'finalizo')
+              .reduce((sum, a) => sum + calcularMonto(a), 0)
+              .toLocaleString()}
           </span>
         </span>
       </div>

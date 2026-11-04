@@ -89,6 +89,20 @@ export async function reincorporarAlumno(id: string) {
   revalidatePath('/cursos')
 }
 
+export async function marcarAlumnoFinalizo(alumnoId: string, fecha: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('alumnos')
+    .update({
+      estado: 'finalizo',
+      fecha_finalizacion: fecha
+    })
+    .eq('id', alumnoId)
+
+  if (error) throw error
+  revalidatePath('/cursos')
+}
+
 export async function registrarPagoCurso(formData: {
   alumno_id: string
   fecha_pago: string

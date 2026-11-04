@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, CreditCard, Edit2, UserMinus, RotateCcw, Loader2, PhoneCall, MessageSquareWarning } from 'lucide-react'
+import { X, CreditCard, Edit2, UserMinus, RotateCcw, Loader2, PhoneCall, MessageSquareWarning, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -15,6 +15,8 @@ import {
 import { AlumnoModal } from './alumno-modal'
 import { PagoModal } from './pago-modal'
 import { BajaModal } from './baja-modal'
+import { FinalizoModal } from './finalizo-modal'
+import { parseFechaLocal } from './resumen-cursos'
 import { SeguimientoModal } from './seguimiento-modal'
 import { SolicitarCorreccionModal } from '@/components/solicitar-correccion-modal'
 import { format } from 'date-fns'
@@ -37,6 +39,7 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
   const [showEditModal, setShowEditModal] = useState(false)
   const [showPagoModal, setShowPagoModal] = useState(false)
   const [showBajaModal, setShowBajaModal] = useState(false)
+  const [showFinalizoModal, setShowFinalizoModal] = useState(false)
   const [showSeguimientoModal, setShowSeguimientoModal] = useState(false)
   const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([])
   const [reincorporando, setReincorporando] = useState(false)
@@ -105,9 +108,21 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
         return <Badge className="bg-amber-500/20 text-amber-400">Atrasado</Badge>
       case 'baja':
         return <Badge className="bg-red-500/20 text-red-400">Baja</Badge>
+      case 'finalizo':
+        return <Badge className="bg-sky-500/20 text-sky-400">Egresado</Badge>
       default:
         return null
     }
+  }
+
+  const getFinalizoBadge = (fechaFinalizacion?: string | null) => {
+    const fecha = parseFechaLocal(fechaFinalizacion)
+    if (!fecha) return null
+    return (
+      <Badge variant="outline" className="border-sky-500/40 text-sky-400">
+        Finalizó {format(fecha, 'MMMM yyyy', { locale: es })}
+      </Badge>
+    )
   }
 
   const getBajaBadge = (fechaBaja?: string | null) => {
@@ -150,6 +165,7 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
             <div className="flex items-center gap-2">
               {getEstadoBadge(alumno.estado)}
               {alumno.estado === 'baja' && getBajaBadge(alumno.fecha_baja)}
+              {alumno.estado === 'finalizo' && getFinalizoBadge(alumno.fecha_finalizacion)}
               {getTipoBadge(alumno.tipo)}
               {alumno.es_reincorporacion && (
                 <Badge variant="outline" className="border-purple-500/50 text-purple-400">
@@ -181,11 +197,19 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
                   <span className="text-foreground">{alumno.descuento_pct}%</span>
                 </div>
               )}
-              {alumno.fecha_baja && (
+              {alumno.estado === 'baja' && alumno.fecha_baja && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Fecha de baja:</span>
                   <span className="text-red-400">
                     {format(new Date(alumno.fecha_baja), 'dd MMM yyyy', { locale: es })}
+                  </span>
+                </div>
+              )}
+              {alumno.estado === 'finalizo' && alumno.fecha_finalizacion && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Finalizó:</span>
+                  <span className="text-sky-400">
+                    {format(parseFechaLocal(alumno.fecha_finalizacion)!, 'MMMM yyyy', { locale: es })}
                   </span>
                 </div>
               )}
@@ -201,7 +225,7 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            {alumno.estado !== 'baja' && (
+            {alumno.estado !== 'baja' && alumno.estado !== 'finalizo' && (
               <>
                 <Button
                   size="sm"
@@ -229,6 +253,17 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
                   Dar de baja
                 </Button>
               </>
+            )}
+            {alumno.estado !== 'finalizo' && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-sky-500/50 text-sky-400 hover:bg-sky-500/10"
+                onClick={() => setShowFinalizoModal(true)}
+              >
+                <GraduationCap className="mr-2 h-4 w-4" />
+                Marcar como finalizó
+              </Button>
             )}
             <Button
               size="sm"
@@ -362,6 +397,13 @@ export function AlumnoPanel({ alumno, cursos, rol, onClose }: AlumnoPanelProps) 
       <BajaModal
         isOpen={showBajaModal}
         onClose={() => setShowBajaModal(false)}
+        alumno={alumno}
+        onSuccess={onClose}
+      />
+
+      <FinalizoModal
+        isOpen={showFinalizoModal}
+        onClose={() => setShowFinalizoModal(false)}
         alumno={alumno}
         onSuccess={onClose}
       />

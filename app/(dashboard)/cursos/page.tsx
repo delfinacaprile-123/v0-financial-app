@@ -71,9 +71,9 @@ export default async function CursosPage() {
 
   const alumnos: Alumno[] = (alumnosRaw ?? []).map((a: any) => {
     const estadoBase = a.estado ?? 'activo'
-    // Los alumnos dados de baja conservan su estado; el resto se deriva de los pagos.
+    // Los alumnos dados de baja o egresados conservan su estado; el resto se deriva de los pagos.
     let estado = estadoBase
-    if (estadoBase !== 'baja') {
+    if (estadoBase !== 'baja' && estadoBase !== 'finalizo') {
       const ultimo = ultimoMesPagado.get(a.id)
       // Inscriptos en el mes actual sin pagos aún no están atrasados (su 1er mes no venció).
       const inscripcionIndex = mesCorrespondienteFechaToIndex(a.fecha_inscripcion)
@@ -96,6 +96,7 @@ export default async function CursosPage() {
       fecha_inscripcion: a.fecha_inscripcion,
       es_reincorporacion: a.es_reincorporacion ?? false,
       fecha_baja: a.fecha_baja ?? null,
+      fecha_finalizacion: a.fecha_finalizacion ?? null,
       tipo_baja: a.tipo_baja ?? null,
       created_at: a.created_at,
       // La relación viene como `cursos` (nombre de la tabla); el tipo espera `curso`
