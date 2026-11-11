@@ -3,17 +3,41 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+// PostgREST corta cada consulta a 1000 filas sin avisar. Este helper pagina con
+// .range() hasta recibir una pagina incompleta y devuelve todo concatenado.
+// La consulta DEBE tener un orden deterministico (con desempate por id) para no
+// duplicar ni perder filas entre paginas.
+const PAGE_SIZE = 1000
+
+async function fetchAllRows<T>(
+  buildQuery: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const rows: T[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildQuery(from, from + PAGE_SIZE - 1)
+    if (error) throw error
+    const page = data ?? []
+    rows.push(...page)
+    if (page.length < PAGE_SIZE) break
+  }
+  return rows
+}
+
 // ============ CURSOS ============
 
 export async function getAlumnos() {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('alumnos')
-    .select('*, cursos(*)')
-    .order('nombre')
-  
-  if (error) throw error
-  return data
+  return fetchAllRows((from, to) =>
+    supabase
+      .from('alumnos')
+      .select('*, cursos(*)')
+      .order('nombre')
+      .order('id')
+      .range(from, to)
+  )
 }
 
 export async function getCursos() {
@@ -139,12 +163,14 @@ export async function getPagosCurso(alumno_id: string) {
 // qué alumnos están al día vs. atrasados según el mes que cubre cada pago.
 export async function getAllPagosCursos() {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('pagos_cursos')
-    .select('alumno_id, mes_correspondiente, fecha_pago')
-
-  if (error) throw error
-  return data
+  return fetchAllRows((from, to) =>
+    supabase
+      .from('pagos_cursos')
+      .select('alumno_id, mes_correspondiente, fecha_pago')
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(from, to)
+  )
 }
 
 // ---- Seguimiento de alumnos (llamados, mensajes, visitas) ----
@@ -611,21 +637,23 @@ export async function setClienteTVActivo(id: string, activo: boolean) {
 
 export async function getMovimientosCaja(mes?: string, anio?: number) {
   const supabase = await createClient()
-  let query = supabase
-    .from('caja')
-    .select('*')
-    .order('fecha', { ascending: false })
-  
-  if (mes && anio) {
-    const startDate = `${anio}-${mes.padStart(2, '0')}-01`
-    const endDate = `${anio}-${mes.padStart(2, '0')}-31`
-    query = query.gte('fecha', startDate).lte('fecha', endDate)
-  }
-  
-  const { data, error } = await query
-  
-  if (error) throw error
-  return data
+  const startDate = mes && anio ? `${anio}-${mes.padStart(2, '0')}-01` : null
+  const endDate = mes && anio ? `${anio}-${mes.padStart(2, '0')}-31` : null
+
+  return fetchAllRows((from, to) => {
+    let query = supabase
+      .from('caja')
+      .select('*')
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id')
+
+    if (startDate && endDate) {
+      query = query.gte('fecha', startDate).lte('fecha', endDate)
+    }
+
+    return query.range(from, to)
+  })
 }
 
 // Forma que envía el cliente (componente Caja)
@@ -704,11 +732,15 @@ export async function deleteMovimientoCaja(id: string) {
 
 export async function getSaldosCaja() {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('caja')
-    .select('tipo, monto, en_poder_de')
-  
-  if (error) throw error
+  const data = await fetchAllRows((from, to) =>
+    supabase
+      .from('caja')
+      .select('tipo, monto, en_poder_de')
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(from, to)
+  )
   
   // Calculate balances
   const saldos = { secretaria: 0, mama: 0 }
@@ -954,13 +986,21 @@ export async function getDashboardStats() {
     { data: pagosCursos },
     { data: trabajos },
     { data: pagosSocialTV },
-    { data: movimientosCaja }
+    movimientosCaja
   ] = await Promise.all([
     supabase.from('alumnos').select('*', { count: 'exact', head: true }).eq('estado', 'activo'),
     supabase.from('pagos_cursos').select('monto').gte('fecha_pago', primerDiaMes).lte('fecha_pago', ultimoDiaMes),
     supabase.from('trabajos').select('monto_cobrado, estado, tipo').gte('fecha', `${currentMonth}-01`),
     supabase.from('pagos_social_tv').select('*, clientes(monto_mensual)').eq('mes', currentMonth.split('-')[1]).eq('anio', currentYear),
-    supabase.from('caja').select('tipo, monto, en_poder_de')
+    fetchAllRows((from, to) =>
+      supabase
+        .from('caja')
+        .select('tipo, monto, en_poder_de')
+        .order('fecha', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id')
+        .range(from, to)
+    )
   ])
   
   const totalCursos = pagosCursos?.reduce((sum, p) => sum + Number(p.monto), 0) || 0
