@@ -104,13 +104,18 @@ export default async function CursosPage() {
     }
   })
 
+  // Solo (alumno_id, fecha_pago) para que el filtro "Pago del mes" funcione en el cliente
+  const pagosLivianos = (pagosRaw ?? [])
+    .filter((p: any) => p.fecha_pago)
+    .map((p: any) => ({ alumno_id: p.alumno_id as string, fecha_pago: String(p.fecha_pago) }))
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Cursos"
         description="Gestion de alumnos y pagos de cursos"
       />
-      <CursosClient cursos={cursos} alumnos={alumnos} rol={rol} />
+      <CursosClient cursos={cursos} alumnos={alumnos} rol={rol} pagos={pagosLivianos} />
     </div>
   )
 }

@@ -23,6 +23,28 @@ interface CursosClientProps {
   cursos: Curso[]
   alumnos: Alumno[]
   rol: string | null
+  pagos: PagoLiviano[]
+}
+
+interface PagoLiviano {
+  alumno_id: string
+  fecha_pago: string
+}
+
+type FiltroPagoMes = 'todos' | 'pagaron' | 'no_pagaron'
+
+const TABS_CON_FILTRO_PAGO: TabCurso[] = ['todos', 'activos', 'atrasados']
+
+const MESES_ATRAS_DISPONIBLES = 24
+
+function getOpcionesMes() {
+  const hoy = new Date()
+  return Array.from({ length: MESES_ATRAS_DISPONIBLES }, (_, i) => {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1)
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const label = format(d, 'MMMM yyyy', { locale: es })
+    return { value, label: label.charAt(0).toUpperCase() + label.slice(1) }
+  })
 }
 
 const TABS: { id: TabCurso; label: string }[] = [
@@ -34,10 +56,24 @@ const TABS: { id: TabCurso; label: string }[] = [
   { id: 'resumen', label: 'Resumen por curso' },
 ]
 
-export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
+export function CursosClient({ cursos, alumnos, rol, pagos }: CursosClientProps) {
   const [activeTab, setActiveTab] = useState<TabCurso>('todos')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCurso, setSelectedCurso] = useState<string>('all')
+  const opcionesMes = useMemo(() => getOpcionesMes(), [])
+  const [filtroPago, setFiltroPago] = useState<FiltroPagoMes>('todos')
+  const [mesPago, setMesPago] = useState<string>(opcionesMes[0].value)
+
+  const mostrarFiltroPago = TABS_CON_FILTRO_PAGO.includes(activeTab)
+
+  // Cuenta cuándo entró la plata (fecha_pago), no el mes de la cuota
+  const alumnosQuePagaronEnMes = useMemo(() => {
+    const ids = new Set<string>()
+    for (const p of pagos) {
+      if (p.fecha_pago.slice(0, 7) === mesPago) ids.add(p.alumno_id)
+    }
+    return ids
+  }, [pagos, mesPago])
   const [showNewAlumnoModal, setShowNewAlumnoModal] = useState(false)
   const [selectedAlumnoId, setSelectedAlumnoId] = useState<string | null>(null)
 
@@ -61,9 +97,17 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
         return false
       }
 
+      // Filter by pago del mes (solo alumnos vigentes)
+      if (mostrarFiltroPago && filtroPago !== 'todos') {
+        if (alumno.estado !== 'activo' && alumno.estado !== 'atrasado') return false
+        const pago = alumnosQuePagaronEnMes.has(alumno.id)
+        if (filtroPago === 'pagaron' && !pago) return false
+        if (filtroPago === 'no_pagaron' && pago) return false
+      }
+
       return true
     })
-  }, [alumnos, activeTab, searchQuery, selectedCurso])
+  }, [alumnos, activeTab, searchQuery, selectedCurso, mostrarFiltroPago, filtroPago, alumnosQuePagaronEnMes])
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
@@ -185,6 +229,32 @@ export function CursosClient({ cursos, alumnos, rol }: CursosClientProps) {
             ))}
           </SelectContent>
         </Select>
+        {mostrarFiltroPago && (
+          <>
+            <Select value={filtroPago} onValueChange={(v) => setFiltroPago(v as FiltroPagoMes)}>
+              <SelectTrigger className="w-full bg-background sm:w-[200px]" aria-label="Pago del mes">
+                <SelectValue placeholder="Pago del mes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Pago del mes: Todos</SelectItem>
+                <SelectItem value="pagaron">Pagaron</SelectItem>
+                <SelectItem value="no_pagaron">No pagaron</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={mesPago} onValueChange={setMesPago}>
+              <SelectTrigger className="w-full bg-background sm:w-[180px]" aria-label="Mes del pago">
+                <SelectValue placeholder="Mes" />
+              </SelectTrigger>
+              <SelectContent>
+                {opcionesMes.map((op) => (
+                  <SelectItem key={op.value} value={op.value}>
+                    {op.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
 
       {/* Table */}
